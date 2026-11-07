@@ -42,8 +42,12 @@
             <tbody>
             <tr th:each="r : ${usporedba.redovi}">
                 <th scope="row" style="background:none;text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink)" th:text="${r.kriterij}">Škola</th>
-                <td th:attr="data-oznaka=|A: ${usporedba.a.adresa}|" th:classappend="${r.bolje == 'A'} ? 'bolje'" th:text="${r.a}">260 m</td>
-                <td th:attr="data-oznaka=|B: ${usporedba.b.adresa}|" th:classappend="${r.bolje == 'B'} ? 'bolje'" th:text="${r.b}">420 m</td>
+                <td th:attr="data-oznaka=|A: ${usporedba.a.adresa}|" th:classappend="${r.bolje == 'A'} ? 'bolje'">
+                    <span th:text="${r.a}">260 m</span>
+                    <span class="bolje-oznaka" th:if="${r.bolje == 'A'}">✓ Bliže / dostupnije</span></td>
+                <td th:attr="data-oznaka=|B: ${usporedba.b.adresa}|" th:classappend="${r.bolje == 'B'} ? 'bolje'">
+                    <span th:text="${r.b}">420 m</span>
+                    <span class="bolje-oznaka" th:if="${r.bolje == 'B'}">✓ Bliže / dostupnije</span></td>
             </tr>
             </tbody>
         </table>

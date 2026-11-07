@@ -58,7 +58,7 @@
 
             <th:block th:each="s, st : ${k.redoslijed}">
 
-                <details class="sekcija" th:if="${s.name() == 'OBRAZOVANJE'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'OBRAZOVANJE'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">🎓</span>
                         <span><strong>Obrazovanje</strong>
                             <small th:text="|Škole: ${k.obrazovanje.skole.size()} · vrtići: ${k.obrazovanje.vrtici.size()} u 2,5 km|">sažetak</small></span>
@@ -77,7 +77,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'PRIJEVOZ'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'PRIJEVOZ'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">🚋</span>
                         <span><strong>Javni prijevoz</strong>
                             <small th:text="${k.prijevoz.stajalista.isEmpty()} ? 'Nema stajališta u 600 m' : |${k.prijevoz.stajalista[0].udaljenostM} m do najbližeg stajališta · ${k.prijevoz.brojLinija} linija u 600 m|">sažetak</small></span>
@@ -102,7 +102,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'ZDRAVLJE'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'ZDRAVLJE'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">✚</span>
                         <span><strong>Zdravlje</strong>
                             <small th:text="${k.zdravlje.zdravstvo.isEmpty()} ? 'Nema podataka' : |Najbliža ustanova ${k.zdravlje.zdravstvo[0].minutaHoda} min hoda|">sažetak</small></span>
@@ -117,7 +117,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'ZRAK'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'ZRAK'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">≋</span>
                         <span><strong>Kvaliteta zraka</strong>
                             <small th:text="${k.zrak != null and k.zrak.prosjekPm10 != null} ? |PM10 godišnji prosjek ${#numbers.formatDecimal(k.zrak.prosjekPm10, 1, 1, 'COMMA')} µg/m³ (${k.zrak.postaja})| : 'Nema podataka'">sažetak</small></span>
@@ -157,7 +157,7 @@
                     <div class="sekcija-tijelo" th:if="${k.zrak == null}"><p class="nema">Nema podataka o kvaliteti zraka.</p></div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'PRISTUPACNOST'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'PRISTUPACNOST'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">♿</span>
                         <span><strong>Pristupačnost</strong>
                             <small th:text="|${k.pristupacnost.ustanove.size()} ustanova za osobe s invaliditetom u blizini|">sažetak</small></span>
@@ -170,7 +170,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'POTRES'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'POTRES'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">⛑</span>
                         <span><strong>U slučaju potresa</strong>
                             <small th:text="${k.potres.zbornoMjesto != null} ? |${k.potres.zbornoMjesto.minutaHoda} min do zbornog mjesta| : 'Nema podataka'">sažetak</small></span>
@@ -182,7 +182,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'OKOLICA'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'OKOLICA'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">◎</span>
                         <span><strong>Okolica u 15 minuta</strong>
                             <small th:text="|${k.okolica.oznaka()} svakodnevnih usluga|">5/6</small></span>
@@ -200,7 +200,7 @@
                     </div>
                 </details>
 
-                <details class="sekcija" th:if="${s.name() == 'STANOVNISTVO'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                <details class="sekcija" th:if="${s.name() == 'STANOVNISTVO'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">👥</span>
                         <span><strong>Stanovništvo</strong>
                             <small th:text="${k.stanovnistvo.stanovnika != null} ? |${k.stanovnistvo.stanovnika} stanovnika/km²| : 'Nema podataka'">sažetak</small></span>

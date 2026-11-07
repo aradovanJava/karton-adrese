@@ -158,7 +158,7 @@ th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border)
 th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: #EEF1F5; }
 .tablica-omot { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
 td.bolje { background: #ECFDF3; }
-td.bolje::after { content: "✓ Bliže / dostupnije"; display: block; font-size: 12px; font-weight: 700; color: var(--success); }
+.bolje-oznaka { display: block; font-size: 12px; font-weight: 700; color: var(--success); }
 .status { font-weight: 700; font-size: 12px; padding: 2px 8px; border-radius: 999px; }
 .status.OK { background: #ECFDF3; color: #05603A; }
 .status.OGLEDNI { background: #FEE4E2; color: #912018; }
