@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava('O podacima')}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container">
+    <section style="padding:40px 0 16px">
+        <p class="nadnaslov">Transparentnost</p>
+        <h1>O podacima</h1>
+        <p class="muted" style="max-width:68ch">Svaki podatak u Kartonu adrese prikazuje izvor i datum. Koristimo javno
+            dostupne skupove podataka; OpenStreetMap je pomoćni izvor za kategorije koje javni sektor ne objavljuje.
+            Podaci ne služe procjeni vrijednosti nekretnine ni sigurnosti naselja.</p>
+    </section>
+
+    <section class="kartica" aria-labelledby="izvori-naslov">
+        <h2 id="izvori-naslov">Izvori i izvješće o kvaliteti</h2>
+        <p class="mala muted">Stanje zadnjeg preuzimanja svakog izvora. Isto izvješće vraća <a th:href="@{/api/kvaliteta-podataka}">/api/kvaliteta-podataka</a>.</p>
+        <div class="tablica-omot">
+            <table class="kartice-mobilno">
+                <thead><tr><th>Skup podataka</th><th>Izdavatelj · licenca</th><th>Stanje</th><th>Zadnje preuzimanje</th><th>Zapisi</th></tr></thead>
+                <tbody>
+                <tr th:each="i : ${izvori}">
+                    <td data-oznaka="Skup podataka">
+                        <a th:if="${i.poveznica != null}" th:href="${i.poveznica}" th:text="${i.naziv}" rel="noopener">naziv</a>
+                        <span th:if="${i.poveznica == null}" th:text="${i.naziv}">naziv</span>
+                        <div class="mala muted" th:text="${i.id}">id</div>
+                    </td>
+                    <td data-oznaka="Izdavatelj · licenca" th:text="|${i.izdavatelj} · ${i.licenca}|">Grad Zagreb · OD</td>
+                    <td data-oznaka="Stanje"><span class="status" th:classappend="${i.status}" th:text="${i.status}">OK</span>
+                        <div class="mala muted" th:if="${i.poruka != null}" th:text="${#strings.abbreviate(i.poruka, 220)}"></div></td>
+                    <td data-oznaka="Zadnje preuzimanje"
+                        th:text="${i.zadnjePreuzimanje != null} ? ${#temporals.format(i.zadnjePreuzimanje, 'd. M. yyyy. HH:mm')} : '—'">—</td>
+                    <td data-oznaka="Zapisi" th:text="${i.spremljeno != null} ? |${i.spremljeno} / ${i.procitano}| : '—'">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="mreza-2" style="margin-top:16px">
+        <section class="kartica" aria-labelledby="brojevi-naslov">
+            <h2 id="brojevi-naslov">Sadržaj baze</h2>
+            <table class="mala">
+                <tr th:each="b : ${brojevi}"><td th:text="${b.key}">opis</td><td style="text-align:right" th:text="${b.value}">0</td></tr>
+            </table>
+            <h3 style="margin-top:16px">Objekti po kategoriji</h3>
+            <table class="mala">
+                <tr th:each="b : ${poKategoriji}"><td th:text="${b.key.mnozina}">Škole</td><td style="text-align:right" th:text="${b.value}">0</td></tr>
+            </table>
+        </section>
+
+        <section class="kartica" id="model" aria-labelledby="model-naslov">
+            <h2 id="model-naslov">Kako računamo procjene?</h2>
+            <p class="mala"><span class="oznaka procjena">procjena</span> Sezonska procjena PM10 dolazi iz modela strojnog
+                učenja (LightGBM) treniranog na mjerenjima postaje i meteorološkim podacima Copernicus ERA5. Model se primjenjuje
+                na „tipičnu godinu” (prosječno vrijeme po danu u godini), a raspon prikazuje nesigurnost iz vremenske unakrsne
+                provjere. Model ne prognozira pojedini dan i ne zamjenjuje službena upozorenja.</p>
+            <p class="mala">Vrijeme hoda računa se iz zračne udaljenosti uz faktor zaobilaženja 1,3 i brzinu hoda prema profilu
+                (80 m/min općenito, 65 m/min umirovljenik, 55 m/min osoba s invaliditetom).</p>
+            <div th:each="m : ${modeli}" style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+                <h3 th:text="|Model: ${m.postajaNaziv}|">Model</h3>
+                <p class="mala" th:if="${m.ogledni}"><span class="oznaka ogledno">Ogledni model</span> treniran na sintetičkim
+                    podacima – samo za provjeru tehničkog toka.</p>
+                <table class="mala">
+                    <tr><td>Razdoblje učenja</td><td th:text="|${m.razdobljeOd} – ${m.razdobljeDo}|"></td></tr>
+                    <tr><td>MAE modela / osnovnog modela</td>
+                        <td th:text="|${#numbers.formatDecimal(m.metrike.mae, 1, 2, 'COMMA')} / ${#numbers.formatDecimal(m.metrike.maeOsnovni, 1, 2, 'COMMA')} µg/m³|"></td></tr>
+                    <tr><td>R²</td><td th:text="${#numbers.formatDecimal(m.metrike.r2, 1, 3, 'COMMA')}"></td></tr>
+                    <tr><td>Pojas mjesečnog prosjeka</td>
+                        <td th:text="|× ${#numbers.formatDecimal(m.donjiOmjer, 1, 2, 'COMMA')} – × ${#numbers.formatDecimal(m.gornjiOmjer, 1, 2, 'COMMA')}|"></td></tr>
+                    <tr><td>Najvažnije značajke</td>
+                        <td><span th:each="v, s : ${m.vaznost}" th:if="${s.index < 4}"
+                                  th:text="|${v.znacajka} (${#numbers.formatDecimal(v.udio * 100, 1, 0, 'COMMA')} %)${s.index < 3 ? ', ' : ''}|"></span></td></tr>
+                </table>
+                <p class="mala muted">Kartica modela: <code th:text="|model/${m.postajaId}/kartica-modela.md|"></code></p>
+            </div>
+            <p class="mala muted" th:if="${modeli.isEmpty()}">Nijedan model nije učitan (mapa <code>model/</code>).</p>
+        </section>
+    </div>
+
+    <section class="kartica" style="margin-top:16px" aria-labelledby="licence-naslov">
+        <h2 id="licence-naslov">Licence i navođenje</h2>
+        <ul class="mala">
+            <li>Podaci Grada Zagreba i Portala otvorenih podataka RH: Otvorena dozvola (data.gov.hr/otvorena-dozvola) ili CC BY 4.0, kako navodi izdavatelj.</li>
+            <li>ZET GTFS: navesti ZET kao izvor. DZS Popis 2021.: navesti Državni zavod za statistiku.</li>
+            <li>Copernicus ERA5: „Contains modified Copernicus Climate Change Service information”.</li>
+            <li>OpenStreetMap: © suradnici OpenStreetMapa, ODbL. Podloga karte: Esri ili Digitalni ortofoto DGU 2024. (Otvorena dozvola).</li>
+            <li>Izlazni skup indeksa grada 15 minuta: CC BY 4.0. Izvorni kod: EUPL-1.2.</li>
+        </ul>
+    </section>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+</body>
+</html>

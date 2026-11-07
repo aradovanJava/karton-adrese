@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava('Ugradnja')}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container">
+    <section style="padding:40px 0 16px">
+        <p class="nadnaslov">Za portale s oglasima i agencije</p>
+        <h1>Ugradite karton adrese u oglas</h1>
+        <p class="muted" style="max-width:68ch">Sažeti karton prikazuje se uz oglas za stan ili poslovni prostor. Dovoljno je
+            kopirati kod i zamijeniti adresu. Podaci dolaze iz istih otvorenih izvora, s navedenim izvorom i datumom.</p>
+    </section>
+
+    <div class="mreza-2">
+        <section class="kartica">
+            <h2>Kod za ugradnju</h2>
+            <label for="kod">HTML (iframe)</label>
+            <textarea id="kod" readonly style="font-family:ui-monospace,Consolas,monospace;font-size:13px;min-height:140px"
+                      th:text="${kodUgradnje}"></textarea>
+            <button type="button" class="gumb sekundarni" style="margin-top:8px" data-kopiraj-polje="kod">Kopiraj kod</button>
+            <h3 style="margin-top:24px">REST API</h3>
+            <p class="mala">Isti podaci dostupni su kao JSON:
+                <code th:text="|GET ${bazniUrl}/api/karton?adresa=…&profil=obitelj|"></code>.
+                Dokumentacija: <a th:href="@{/swagger-ui.html}">Swagger UI</a> (OpenAPI 3).</p>
+        </section>
+        <section class="kartica">
+            <h2>Pregled</h2>
+            <iframe th:src="@{/widget(adresa=${primjer})}" title="Pregled ugrađenog kartona adrese" width="100%" height="420"
+                    style="border:1px solid var(--border);border-radius:12px" loading="lazy"></iframe>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+</body>
+</html>

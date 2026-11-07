@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pogreška – Karton adrese</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="container" style="padding:64px 0">
+    <p class="nadnaslov" th:text="|Pogreška ${status}|">Pogreška</p>
+    <h1 th:text="${status == 404} ? 'Stranicu nismo pronašli' : 'Nešto je pošlo po zlu'">Nešto je pošlo po zlu</h1>
+    <p class="muted" th:text="${status == 404} ? 'Provjerite adresu stranice ili se vratite na početnu.' : 'Pokušajte ponovno za nekoliko trenutaka. Ako se pogreška ponavlja, javite nam.'">Pokušajte ponovno.</p>
+    <a class="gumb" th:href="@{/}">Natrag na početnu</a>
+</main>
+</body>
+</html>

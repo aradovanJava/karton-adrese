@@ -1,0 +1,282 @@
+# Karton adrese – konfiguracija
+#
+# Bez profila aplikacija radi u OGLEDNOM načinu: H2 baza u memoriji i sintetički ogledni podaci,
+# bez interneta i bez Dockera (./mvnw spring-boot:run).
+# Profil "postgis" (docker compose ili --spring.profiles.active=postgis) koristi PostgreSQL/PostGIS,
+# stvarne izvore otvorenih podataka i geokodiranje preko Nominatima.
+
+spring:
+  application:
+    name: karton-adrese
+  datasource:
+    url: jdbc:h2:mem:karton;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  flyway:
+    locations: classpath:db/migration/{vendor}
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    hr.kartonadrese: INFO
+
+karton:
+  ogledni-podaci: true
+  # Nominatim i Overpass traže prepoznatljiv User-Agent s kontaktom (pravila korištenja OSMF-a)
+  user-agent: ${KARTON_USER_AGENT:karton-adrese/1.0 (+https://github.com/aradovanJava/karton-adrese)}
+  podrucje:
+    naziv: Grad Zagreb
+    min-lat: 45.62
+    min-lon: 15.77
+    max-lat: 45.97
+    max-lon: 16.24
+    centar-lat: 45.813
+    centar-lon: 15.98
+  geokodiranje:
+    nominatim: false
+    nominatim-url: https://nominatim.openstreetmap.org
+    grad: Zagreb
+    najvise-po-uvozu: 300
+  uvoz:
+    pri-pokretanju: false
+    raspored: "-"
+    privremena-mapa: ${java.io.tmpdir}
+  model:
+    mapa: ${KARTON_MODEL_MAPA:model}
+  admin:
+    token: ${KARTON_ADMIN_TOKEN:}
+  primjeri-adresa:
+    - Gorjanovićeva ulica 15
+    - Ilica 1
+    - Trg bana Josipa Jelačića 5
+
+  # ------------------------------------------------------------------------------------------
+  # Izvori podataka. Za CKAN izvore "paket" je identifikator skupa na portalu
+  # (https://data.zagreb.hr/dataset/<paket> ili https://data.gov.hr/ckan/dataset/<paket>).
+  # Stanje i statistika svakog uvoza vide se na /podaci i /api/kvaliteta-podataka.
+  # ------------------------------------------------------------------------------------------
+  izvori:
+    # --- Portal otvorenih podataka Grada Zagreba ---
+    - id: zg-vrtici
+      naziv: Dječji vrtići Grada Zagreba
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: djecji-vrtici-grada-zagreba
+      kategorija: VRTIC
+    - id: zg-zdravstvo
+      naziv: Geoportal – zdravstvene ustanove
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-zdravstvene-ustanove
+      kategorija: ZDRAVSTVO
+    - id: zg-ljekarne
+      naziv: Ljekarne Grada Zagreba
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: ljekarne-grada-zagreba
+      kategorija: LJEKARNA
+    - id: zg-osi
+      naziv: Geoportal – ustanove za osobe s invaliditetom
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-ustanove-za-osobe-s-invaliditetom
+      kategorija: PRISTUPACNOST
+    - id: zg-pjesacka-zona
+      naziv: Geoportal – pješačka zona
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-pjesacka-zona
+      kategorija: PJESACKA_ZONA
+    - id: zg-zborna-mjesta
+      naziv: Zborna mjesta civilne zaštite Grada Zagreba
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: zborna-mjesta-civilne-zastite-grada-zagreba
+      kategorija: ZBORNO_MJESTO
+    - id: zg-evakuacija
+      naziv: Evakuacijske površine
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: evakuacijske-povrsine
+      kategorija: EVAKUACIJA
+    - id: zg-cetvrti
+      naziv: Gradske četvrti – prostorne jedinice mjesne samouprave
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: GRANICE
+      portal: https://data.zagreb.hr
+      paket: gradske-cetvrti-prostorna-jedinica-mjesne-samouprave-za-podrucje-grada-zagreba
+      formati: [GEOJSON, JSON]
+    - id: zg-mjesni-odbori
+      naziv: Mjesni odbori – prostorne jedinice mjesne samouprave
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: GRANICE
+      portal: https://data.zagreb.hr
+      paket: mjesni-odbori-prostorna-jedinica-mjesne-samouprave-za-podrucje-grada-zagreba
+      formati: [GEOJSON, JSON]
+      mjesni-odbor: true
+    - id: zg-ulice
+      naziv: Registar naziva ulica
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: ULICE
+      portal: https://data.zagreb.hr
+      paket: registar-naziva-ulica-adresna-prostorna-jedinica-za-podrucje-grada-zagreba
+      formati: [CSV, XLSX, XLS]
+    - id: zg-osnovne-skole
+      naziv: Osnovne škole Grada Zagreba (smjene, produženi boravak)
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      # Upišite identifikator skupa s portala (pretraga: package_search?q=osnovne+škole) i uključite izvor.
+      paket: osnovne-skole
+      kategorija: SKOLA
+      omogucen: false
+
+    # --- Portal otvorenih podataka RH (data.gov.hr) ---
+    - id: gov-srednje-skole
+      naziv: Geoportal – srednje škole
+      izdavatelj: Grad Zagreb (data.gov.hr)
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.gov.hr/ckan
+      paket: geoportal-srednje-skole
+      kategorija: SREDNJA_SKOLA
+    - id: gov-knjiznice
+      naziv: Knjižnice Grada Zagreba
+      izdavatelj: Grad Zagreb (data.gov.hr)
+      licenca: CC BY 4.0
+      vrsta: CKAN
+      portal: https://data.gov.hr/ckan
+      paket: knjiznice-grada-zagreba1
+      kategorija: KNJIZNICA
+    - id: gov-kultura
+      naziv: Geoportal – kulturne ustanove
+      izdavatelj: Grad Zagreb (data.gov.hr)
+      licenca: CC BY 4.0
+      vrsta: CKAN
+      portal: https://data.gov.hr/ckan
+      paket: geoportal-kulturne-ustanove
+      kategorija: KULTURA
+    - id: gov-garaze
+      naziv: Geoportal – javne garaže
+      izdavatelj: Grad Zagreb (data.gov.hr)
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.gov.hr/ckan
+      paket: geoportal-javne-garaze
+      kategorija: GARAZA
+
+    # --- ZET i DZS ---
+    - id: zet-gtfs
+      naziv: ZET – vozni red i stajališta (GTFS)
+      izdavatelj: ZET
+      licenca: Otvorena dozvola
+      vrsta: GTFS
+      url: https://zet.hr/gtfs-scheduled/latest
+      poveznica: https://www.zet.hr/odredbe/datoteke-u-gtfs-formatu/669
+    - id: dzs-popis-2021
+      naziv: Popis stanovništva 2021. na mreži 1 km²
+      izdavatelj: Državni zavod za statistiku
+      licenca: Otvorena dozvola
+      vrsta: WFS_POPIS
+      url: https://geostat.dzs.hr/inspire/pd-2021/wfs
+      poveznica: https://registri.nipp.hr/tcpdf/print/izvor_javno.php?id=1750
+      # upit: <naziv sloja>   # ako automatski odabir sloja iz GetCapabilities ne odgovara
+
+    # --- Pomoćni otvoreni izvori (nisu javni sektor) – OpenStreetMap, ODbL ---
+    - id: osm-trgovine
+      naziv: Trgovine prehranom (OpenStreetMap)
+      izdavatelj: Suradnici OpenStreetMapa
+      licenca: ODbL
+      vrsta: OVERPASS
+      upit: nwr["shop"~"^(supermarket|convenience|greengrocer|bakery|butcher)$"]
+      kategorija: TRGOVINA
+      poveznica: https://www.openstreetmap.org/copyright
+    - id: osm-osnovne-skole
+      naziv: Osnovne škole (OpenStreetMap, dok skup Grada nije uključen)
+      izdavatelj: Suradnici OpenStreetMapa
+      licenca: ODbL
+      vrsta: OVERPASS
+      upit: nwr["amenity"="school"]["isced:level"~"1|2"];nwr["amenity"="school"]["name"~"Osnovna|OŠ"]
+      kategorija: SKOLA
+      poveznica: https://www.openstreetmap.org/copyright
+    - id: osm-parkovi
+      naziv: Parkovi (OpenStreetMap)
+      izdavatelj: Suradnici OpenStreetMapa
+      licenca: ODbL
+      vrsta: OVERPASS
+      upit: nwr["leisure"="park"]["name"]
+      kategorija: PARK
+      poveznica: https://www.openstreetmap.org/copyright
+    - id: osm-sport
+      naziv: Igrališta i sportski objekti (OpenStreetMap)
+      izdavatelj: Suradnici OpenStreetMapa
+      licenca: ODbL
+      vrsta: OVERPASS
+      upit: nwr["leisure"~"^(playground|sports_centre)$"]
+      kategorija: SPORT
+      poveznica: https://www.openstreetmap.org/copyright
+
+---
+# Profil "postgis": PostgreSQL + PostGIS, stvarni izvori i geokodiranje
+spring:
+  config:
+    activate:
+      on-profile: postgis
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:karton}
+    username: ${DB_USER:karton}
+    password: ${DB_PASSWORD:karton}
+
+karton:
+  ogledni-podaci: false
+  geokodiranje:
+    nominatim: true
+  uvoz:
+    # svakog ponedjeljka u 3:30 (izdavatelji osvježavaju podatke u razmacima od dana do mjeseci)
+    raspored: "0 30 3 * * MON"

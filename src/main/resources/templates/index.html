@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava('Javni podaci spojeni po adresi')}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container">
+    <section class="hero hero-mreza">
+        <div>
+            <span class="oznaka-izvora">✓ Službeni izvori otvorenih podataka</span>
+            <p class="nadnaslov" style="margin-top:16px">Javni podaci, razumljivo prikazani</p>
+            <h1>Što oglas ne piše – javni podaci spojeni po adresi</h1>
+            <p class="uvod">Upišite zagrebačku adresu i provjerite što je u blizini: škole, vrtići, prijevoz, zdravstvo,
+                kvaliteta zraka i zborna mjesta – bez ocjenjivanja cijene nekretnine ili sigurnosti naselja.</p>
+
+            <div class="obavijest greska" role="alert" th:if="${greska}">
+                <span aria-hidden="true">⚠</span>
+                <div>
+                    <p th:text="${greska}">Adresu nismo pronašli.</p>
+                    <p th:if="${prijedlozi != null and !prijedlozi.isEmpty()}" style="margin:0">Jeste li mislili:
+                        <a th:each="p : ${prijedlozi}" th:href="@{/karton(adresa=${p},profil=${odabraniProfil.oznaka})}"
+                           th:text="${p}" style="margin-right:8px">adresa</a>
+                    </p>
+                </div>
+            </div>
+
+            <form class="kartica" th:action="@{/karton}" method="get" style="margin-top:16px">
+                <div th:replace="~{fragmenti/raspored :: upis-adrese('adresa', ${upit}, 'Adresa u Zagrebu', 'adresa')}"></div>
+                <fieldset class="cipovi">
+                    <legend>Prilagodi prikaz</legend>
+                    <label class="cip" th:each="p : ${profili}">
+                        <input type="radio" name="profil" th:value="${p.oznaka}" th:checked="${p == odabraniProfil}">
+                        <span th:text="${p.naziv}">Općenito</span>
+                    </label>
+                </fieldset>
+                <button class="gumb" type="submit" style="width:100%">Prikaži karton adrese</button>
+            </form>
+            <p class="primjeri" th:if="${!primjeri.isEmpty()}">Primjeri:
+                <a th:each="p : ${primjeri}" th:href="@{/karton(adresa=${p})}" th:text="${p}">Ilica 1</a>
+            </p>
+        </div>
+        <div class="hero-slika" aria-hidden="true">
+            <svg viewBox="0 0 320 260" width="100%" style="max-width:380px">
+                <rect x="10" y="10" width="300" height="240" rx="16" fill="#fff" stroke="#D5DAE3"/>
+                <path d="M10 170 L310 90" stroke="#E6EBEF" stroke-width="22"/>
+                <path d="M120 10 L170 250" stroke="#E6EBEF" stroke-width="16"/>
+                <circle cx="150" cy="140" r="70" fill="#2F63B0" fill-opacity=".08" stroke="#2F63B0" stroke-dasharray="4 4"/>
+                <circle cx="105" cy="105" r="9" fill="#2F63B0"/><circle cx="198" cy="118" r="9" fill="#9A5B00"/>
+                <circle cx="168" cy="196" r="9" fill="#1F7A4D"/><circle cx="96" cy="176" r="9" fill="#7A4E9E"/>
+                <path d="M150 112c-11 0-20 9-20 20 0 15 20 33 20 33s20-18 20-33c0-11-9-20-20-20z" fill="#1F4C8F"/>
+                <circle cx="150" cy="132" r="7" fill="#fff"/>
+            </svg>
+        </div>
+    </section>
+
+    <section class="brze-veze" aria-label="Brze poveznice">
+        <a class="brza-veza" th:href="@{/usporedba}"><span aria-hidden="true">⇄</span>
+            <span><strong>Usporedi dvije adrese</strong><span class="mala muted">Usporedba dostupnosti usluga</span></span></a>
+        <a class="brza-veza" th:href="@{/karta}"><span aria-hidden="true">▦</span>
+            <span><strong>Karta grada 15 minuta</strong><span class="mala muted">Istražite Zagreb po mreži 1 km²</span></span></a>
+    </section>
+
+    <section aria-labelledby="kako-radi">
+        <h2 id="kako-radi" style="margin-top:48px">Kako radi</h2>
+        <div class="koraci">
+            <div class="kartica korak"><div class="broj">1</div><h3>Upišite adresu</h3>
+                <p class="muted mala">Prijedlozi dolaze iz registra naziva ulica Grada Zagreba.</p></div>
+            <div class="kartica korak"><div class="broj">2</div><h3>Odaberite profil</h3>
+                <p class="muted mala">Obitelj, student, umirovljenik ili osoba s invaliditetom – mijenja se redoslijed i vrijeme hoda.</p></div>
+            <div class="kartica korak"><div class="broj">3</div><h3>Provjerite izvor</h3>
+                <p class="muted mala">Uz svaki podatak su izdavatelj i datum. Pogrešku možete prijaviti jednim klikom.</p></div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+</body>
+</html>

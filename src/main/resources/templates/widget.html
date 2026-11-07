@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Karton adrese – ${adresa}|">Karton adrese</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body style="background:#fff">
+<div class="widget">
+    <th:block th:if="${karton != null}" th:with="k=${karton}">
+        <p class="nadnaslov" style="margin:0 0 4px">Karton adrese</p>
+        <h2 th:text="${k.adresa}">Adresa</h2>
+        <div class="mreza-2" style="margin:12px 0">
+            <div class="sazetak-kartica" th:each="c : ${k.kartice}">
+                <div><small th:text="${c.oznaka}">Oznaka</small><strong th:text="${c.vrijednost}">vrijednost</strong></div>
+            </div>
+        </div>
+        <ul class="mala" style="padding-left:18px">
+            <li th:each="s : ${k.sazetak}" th:text="${s.tekst}">Rečenica</li>
+        </ul>
+        <p class="mala muted" th:if="${k.ogledni}"><span class="oznaka ogledno">ogledni podaci</span></p>
+        <a class="gumb malen" th:href="@{/karton(adresa=${k.adresa})}" target="_blank" rel="noopener">Cijeli karton ↗</a>
+        <p class="mala muted" style="margin-top:8px">Izvori: otvoreni podaci Grada Zagreba, ZET-a i DZS-a.</p>
+    </th:block>
+    <p th:if="${karton == null}" class="mala" th:text="|Adresu „${adresa}” nismo pronašli.|">Adresu nismo pronašli.</p>
+</div>
+</body>
+</html>

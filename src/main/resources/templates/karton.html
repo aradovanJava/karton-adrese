@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava(${karton.adresa})}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container" th:with="k=${karton}">
+    <div class="karton-glava">
+        <div>
+            <a th:href="@{/}" class="mala">← Natrag na pretragu</a>
+            <p class="nadnaslov" style="margin-top:12px">Karton adrese</p>
+            <h1 th:text="${k.adresa}">Gorjanovićeva ulica 15</h1>
+            <p class="muted" th:if="${k.gradskaCetvrt != null}"
+               th:text="${k.mjesniOdbor != null} ? |Gradska četvrt ${k.gradskaCetvrt} · Mjesni odbor ${k.mjesniOdbor}| : |Gradska četvrt ${k.gradskaCetvrt}|">
+                Gradska četvrt Maksimir</p>
+        </div>
+        <div class="karton-akcije">
+            <a class="gumb sekundarni" th:href="@{/usporedba(a=${k.adresa})}">⇄ Usporedi s drugom adresom</a>
+            <button class="gumb sekundarni" type="button" data-kopiraj>🔗 Kopiraj poveznicu</button>
+        </div>
+    </div>
+
+    <nav class="cipovi" aria-label="Prikaz za profil">
+        <span class="mala" style="font-weight:600;align-self:center">Prikaz za:</span>
+        <span class="cip" th:each="p : ${profili}">
+            <a th:href="@{/karton(adresa=${k.adresa},profil=${p.oznaka})}" th:text="${p.naziv}"
+               th:attr="aria-current=${p == k.profil ? 'true' : null}">Općenito</a>
+        </span>
+    </nav>
+
+    <div class="obavijest info" th:if="${k.ogledni}" role="note">
+        <span aria-hidden="true">ℹ</span>
+        <span>Prikazani su <strong>ogledni (sintetički) podaci</strong> za rad bez interneta. Pokrenite aplikaciju s profilom
+            <code>postgis</code> i uvezite stvarne izvore (upute u README.md).</span>
+    </div>
+    <div class="obavijest uspjeh" th:if="${poruka}" role="status" th:text="${poruka}">Hvala!</div>
+    <div class="obavijest greska" th:if="${greskaPrijave}" role="alert" th:text="${greskaPrijave}">Greška</div>
+
+    <div class="karton-mreza">
+        <div>
+            <div class="mreza-4" style="margin-bottom:16px">
+                <div class="sazetak-kartica" th:each="c : ${k.kartice}">
+                    <span class="ikona" aria-hidden="true"
+                          th:text="${c.ikona == 'skola' ? '🎓' : (c.ikona == 'vrtic' ? '🧸' : (c.ikona == 'prijevoz' ? '🚋' : '◎'))}">◎</span>
+                    <div><small th:text="${c.oznaka}">Najbliža škola</small><strong th:text="${c.vrijednost}">260 m</strong></div>
+                </div>
+            </div>
+
+            <section class="sazetak" aria-labelledby="sazetak-naslov" th:if="${!k.sazetak.isEmpty()}">
+                <h2 id="sazetak-naslov"><span class="oznaka ai">Sažetak iz podataka</span> Vrijedi znati</h2>
+                <ul>
+                    <li th:each="s : ${k.sazetak}">
+                        <span><span th:text="${s.tekst}">Rečenica.</span>
+                            <span class="izvor" th:text="${s.datum != null} ? |Izvor: ${s.izvor} · ${s.datum}| : |Izvor: ${s.izvor}|">Izvor</span></span>
+                    </li>
+                </ul>
+            </section>
+
+            <th:block th:each="s, st : ${k.redoslijed}">
+
+                <details class="sekcija" th:if="${s.name() == 'OBRAZOVANJE'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">🎓</span>
+                        <span><strong>Obrazovanje</strong>
+                            <small th:text="|Škole: ${k.obrazovanje.skole.size()} · vrtići: ${k.obrazovanje.vrtici.size()} u 2,5 km|">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <h3 style="margin-top:12px">Osnovne škole</h3>
+                        <th:block th:each="o : ${k.obrazovanje.skole}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="nema" th:if="${k.obrazovanje.skole.isEmpty()}">Nema podataka o školama u blizini.</p>
+                        <h3 style="margin-top:12px">Dječji vrtići</h3>
+                        <th:block th:each="o : ${k.obrazovanje.vrtici}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="nema" th:if="${k.obrazovanje.vrtici.isEmpty()}">Nema podataka o vrtićima u blizini.</p>
+                        <th:block th:if="${!k.obrazovanje.srednjeSkole.isEmpty()}">
+                            <h3 style="margin-top:12px">Srednje škole</h3>
+                            <th:block th:each="o : ${k.obrazovanje.srednjeSkole}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        </th:block>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'PRIJEVOZ'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">🚋</span>
+                        <span><strong>Javni prijevoz</strong>
+                            <small th:text="${k.prijevoz.stajalista.isEmpty()} ? 'Nema stajališta u 600 m' : |${k.prijevoz.stajalista[0].udaljenostM} m do najbližeg stajališta · ${k.prijevoz.brojLinija} linija u 600 m|">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <div class="stavka" th:each="t : ${k.prijevoz.stajalista}">
+                            <div>
+                                <div class="naslov" th:text="${t.naziv}">Jordanovac</div>
+                                <div class="meta" th:text="|${t.udaljenostM} m · ${t.minutaHoda} min hoda · ${t.vrsta}|"></div>
+                                <div class="linije" style="margin-top:4px" th:if="${!t.linije.isEmpty()}">
+                                    <span class="linija" th:each="l : ${t.linije}" th:text="${l}"
+                                          th:classappend="${t.vrsta == 'autobus'} ? 'bus'">4</span>
+                                </div>
+                            </div>
+                            <div class="desno">
+                                <span class="izvor" th:text="${k.prijevoz.datum != null} ? |Izvor: ${k.prijevoz.izvor} · ${k.prijevoz.datum}| : |Izvor: ${k.prijevoz.izvor}|">Izvor</span>
+                                <button type="button" class="gumb-tekst" data-prijava
+                                        th:attr="data-objekt=${t.naziv},data-izvor=${k.prijevoz.izvor}">Prijavi pogrešku</button>
+                            </div>
+                        </div>
+                        <p class="nema" th:if="${k.prijevoz.stajalista.isEmpty()}">U krugu od 600 m nema stajališta javnog prijevoza.</p>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'ZDRAVLJE'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">✚</span>
+                        <span><strong>Zdravlje</strong>
+                            <small th:text="${k.zdravlje.zdravstvo.isEmpty()} ? 'Nema podataka' : |Najbliža ustanova ${k.zdravlje.zdravstvo[0].minutaHoda} min hoda|">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <h3 style="margin-top:12px">Domovi zdravlja i ambulante</h3>
+                        <th:block th:each="o : ${k.zdravlje.zdravstvo}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="nema" th:if="${k.zdravlje.zdravstvo.isEmpty()}">Nema podataka u blizini.</p>
+                        <h3 style="margin-top:12px">Ljekarne</h3>
+                        <th:block th:each="o : ${k.zdravlje.ljekarne}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="nema" th:if="${k.zdravlje.ljekarne.isEmpty()}">Nema podataka u blizini.</p>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'ZRAK'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">≋</span>
+                        <span><strong>Kvaliteta zraka</strong>
+                            <small th:text="${k.zrak != null and k.zrak.prosjekPm10 != null} ? |PM10 godišnji prosjek ${#numbers.formatDecimal(k.zrak.prosjekPm10, 1, 1, 'COMMA')} µg/m³ (${k.zrak.postaja})| : 'Nema podataka'">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo" th:if="${k.zrak != null}">
+                        <div class="stavka">
+                            <div>
+                                <div class="naslov" th:text="|Mjerna postaja ${k.zrak.postaja}|">Đorđićeva ulica</div>
+                                <div class="meta" th:text="|${k.zrak.udaljenostM} m od adrese · ${k.zrak.mreza}|"></div>
+                                <div class="meta" th:if="${k.zrak.prosjekPm10 != null}"
+                                     th:text="|${k.zrak.godina}.: prosjek PM10 ${#numbers.formatDecimal(k.zrak.prosjekPm10, 1, 1, 'COMMA')} µg/m³ · ${k.zrak.danaIznad50} dana iznad dnevne granice (50 µg/m³)|"></div>
+                            </div>
+                            <div class="desno"><span class="izvor" th:text="|Izvor: ${k.zrak.izvorMjerenja}|">Izvor</span></div>
+                        </div>
+                        <th:block th:if="${!k.zrak.procjena.isEmpty()}">
+                            <h3 style="margin-top:12px;display:flex;gap:8px;align-items:center">Sezonska procjena PM10
+                                <span class="oznaka procjena">procjena</span>
+                                <span class="oznaka ogledno" th:if="${k.zrak.ogledniModel}">ogledni model</span></h3>
+                            <div class="graf"><canvas id="graf-zraka" role="img"
+                                                      aria-label="Graf procijenjenog mjesečnog prosjeka PM10 s rasponom nesigurnosti; vrijednosti su u tablici ispod"></canvas></div>
+                            <details>
+                                <summary class="mala">Vrijednosti u tablici</summary>
+                                <table class="mala">
+                                    <thead><tr><th>Mjesec</th><th>PM10 (µg/m³)</th><th>Raspon</th></tr></thead>
+                                    <tbody><tr th:each="m : ${k.zrak.procjena}">
+                                        <td th:text="${m.mjesec}">1</td>
+                                        <td th:text="${#numbers.formatDecimal(m.pm10, 1, 1, 'COMMA')}">25,0</td>
+                                        <td th:text="|${#numbers.formatDecimal(m.donja, 1, 1, 'COMMA')} – ${#numbers.formatDecimal(m.gornja, 1, 1, 'COMMA')}|">20 – 30</td>
+                                    </tr></tbody>
+                                </table>
+                            </details>
+                            <p class="mala muted">ⓘ Raspon prikazuje nesigurnost procjene (≈80 % mjeseci u provjeri).
+                                <a th:href="@{/podaci#model}">Kako računamo?</a></p>
+                            <span class="izvor" th:text="|Izvor: ${k.zrak.izvorProcjene}|">Izvor</span>
+                        </th:block>
+                    </div>
+                    <div class="sekcija-tijelo" th:if="${k.zrak == null}"><p class="nema">Nema podataka o kvaliteti zraka.</p></div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'PRISTUPACNOST'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">♿</span>
+                        <span><strong>Pristupačnost</strong>
+                            <small th:text="|${k.pristupacnost.ustanove.size()} ustanova za osobe s invaliditetom u blizini|">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <th:block th:each="o : ${k.pristupacnost.ustanove}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <th:block th:if="${k.pristupacnost.pjesackaZona != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.pristupacnost.pjesackaZona})}"></div></th:block>
+                        <th:block th:each="o : ${k.pristupacnost.tramvajska}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="nema" th:if="${k.pristupacnost.ustanove.isEmpty() and k.pristupacnost.pjesackaZona == null}">Nema podataka u blizini.</p>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'POTRES'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">⛑</span>
+                        <span><strong>U slučaju potresa</strong>
+                            <small th:text="${k.potres.zbornoMjesto != null} ? |${k.potres.zbornoMjesto.minutaHoda} min do zbornog mjesta| : 'Nema podataka'">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <th:block th:if="${k.potres.zbornoMjesto != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.potres.zbornoMjesto})}"></div></th:block>
+                        <th:block th:if="${k.potres.evakuacija != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.potres.evakuacija})}"></div></th:block>
+                        <p class="nema" th:if="${k.potres.zbornoMjesto == null and k.potres.evakuacija == null}">Nema podataka u blizini.</p>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'OKOLICA'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">◎</span>
+                        <span><strong>Okolica u 15 minuta</strong>
+                            <small th:text="|${k.okolica.oznaka()} svakodnevnih usluga|">5/6</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <p style="margin-top:12px"><span class="indeks" th:text="${k.okolica.oznaka()}">5/6</span>
+                            <span class="muted">vrsta svakodnevnih usluga dostupno je pješice unutar 15 minuta.</span></p>
+                        <p class="mala" th:if="${!k.okolica.nedostaju.isEmpty()}"
+                           th:text="|Nedostaje u 15 minuta: ${#strings.listJoin(k.okolica.nedostaju, ', ')}|"></p>
+                        <th:block th:each="o : ${k.okolica.najblizi}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <th:block th:if="${!k.okolica.ostalo.isEmpty()}">
+                            <h3 style="margin-top:12px">Parkovi, knjižnice i sport</h3>
+                            <th:block th:each="o : ${k.okolica.ostalo}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        </th:block>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'STANOVNISTVO'}" th:attr="open=${st.index < 2 ? \'open\' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">👥</span>
+                        <span><strong>Stanovništvo</strong>
+                            <small th:text="${k.stanovnistvo.stanovnika != null} ? |${k.stanovnistvo.stanovnika} stanovnika/km²| : 'Nema podataka'">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <p style="margin-top:12px" th:if="${k.stanovnistvo.stanovnika != null}"
+                           th:text="|U ćeliji mreže 1 km² u kojoj je adresa živi ${k.stanovnistvo.stanovnika} stanovnika.|"></p>
+                        <p class="nema" th:if="${k.stanovnistvo.stanovnika == null}">Za ovu ćeliju nema podatka o broju stanovnika.</p>
+                        <p class="mala muted" th:text="|Ćelija ${k.stanovnistvo.celija}|"></p>
+                        <span class="izvor" th:text="|Izvor: ${k.stanovnistvo.izvor}|">Izvor</span>
+                        <p class="mala" style="margin-top:8px"><a th:href="@{/karta}">Pogledajte kartu grada 15 minuta →</a></p>
+                    </div>
+                </details>
+            </th:block>
+        </div>
+
+        <aside class="karta-stupac" aria-label="Karta okolice">
+            <div id="karta" class="karta" role="region" aria-label="Karta s objektima u okolici adrese"></div>
+            <div class="karta-slojevi" id="slojevi" aria-label="Slojevi karte"></div>
+            <p class="mala muted">Krug označava domet 15 minuta hoda za odabrani profil.</p>
+        </aside>
+    </div>
+
+    <dialog id="prijava" aria-labelledby="prijava-naslov">
+        <form th:action="@{/prijava}" method="post" novalidate>
+            <div class="dijalog-glava">
+                <div><p class="nadnaslov" style="margin:0">Poboljšajmo podatke</p>
+                    <h2 id="prijava-naslov" style="margin:0">Prijavi pogrešku</h2></div>
+                <button type="button" class="zatvori" data-zatvori aria-label="Zatvori">×</button>
+            </div>
+            <div class="dijalog-tijelo">
+                <div class="dijalog-podaci">
+                    <div><small>Objekt</small><strong data-prikaz-objekt>—</strong></div>
+                    <div><small>Izvor</small><strong data-prikaz-izvor>—</strong></div>
+                </div>
+                <input type="hidden" name="objekt" value="">
+                <input type="hidden" name="izvor" value="">
+                <input type="hidden" name="adresa" th:value="${k.adresa}">
+                <input type="hidden" name="povratak" th:value="@{/karton(adresa=${k.adresa},profil=${k.profil.oznaka})}">
+                <div class="polje">
+                    <label for="opis">Opis pogreške</label>
+                    <textarea id="opis" name="opis" required minlength="5" maxlength="2000"
+                              placeholder="Opišite što nije točno…" aria-describedby="opis-greska"></textarea>
+                    <div id="opis-greska" class="greska-polja" hidden>Unesite opis pogreške (barem nekoliko riječi).</div>
+                </div>
+                <div class="polje">
+                    <label for="email">E-mail <span class="muted">(neobavezno)</span></label>
+                    <input id="email" name="email" type="email" maxlength="200" placeholder="ime@primjer.hr" aria-describedby="email-pomoc">
+                    <div id="email-pomoc" class="pomoc">Koristi se samo za povratnu informaciju o ispravku.</div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                    <button type="button" class="gumb sekundarni" data-zatvori>Odustani</button>
+                    <button type="submit" class="gumb">Pošalji</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+    <div class="toast" th:if="${poruka}" role="status" data-toast th:text="${poruka}">Hvala!</div>
+
+    <script type="application/json" id="karton-podaci" th:utext="${kartonJson}">{}</script>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+<script th:src="@{/vendor/leaflet/leaflet.js}"></script>
+<script th:src="@{/vendor/chart.js/chart.umd.js}"></script>
+<script th:src="@{/js/podloga.js}"></script>
+<script th:src="@{/js/karton.js}"></script>
+</body>
+</html>

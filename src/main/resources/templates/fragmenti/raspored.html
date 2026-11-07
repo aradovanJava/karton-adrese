@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="glava(naslov)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${naslov} – Karton adrese|">Karton adrese</title>
+    <meta name="description" content="Karton adrese: javni podaci o školama, vrtićima, prijevozu, zdravstvu, kvaliteti zraka i sigurnosti spojeni po adresi u Zagrebu.">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/vendor/leaflet/leaflet.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header th:fragment="zaglavlje" class="zaglavlje">
+    <a class="preskoci" href="#sadrzaj">Preskoči na sadržaj</a>
+    <div class="container">
+        <a class="logo" th:href="@{/}">
+            <span class="logo-znak" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <span>Karton adrese<small th:text="${nazivPodrucja}">Grad Zagreb</small></span>
+        </a>
+        <button class="gumb sekundarni malen izbornik-gumb" type="button" aria-expanded="false"
+                aria-controls="glavna-navigacija" data-izbornik>Izbornik</button>
+        <nav id="glavna-navigacija" class="nav" aria-label="Glavna navigacija">
+            <a th:href="@{/usporedba}" th:attr="aria-current=${aktivno == 'usporedba' ? 'page' : null}">Usporedba</a>
+            <a th:href="@{/karta}" th:attr="aria-current=${aktivno == 'karta' ? 'page' : null}">Karta 15 minuta</a>
+            <a th:href="@{/podaci}" th:attr="aria-current=${aktivno == 'podaci' ? 'page' : null}">O podacima</a>
+            <a th:href="@{/ugradnja}" th:attr="aria-current=${aktivno == 'ugradnja' ? 'page' : null}">Ugradnja</a>
+        </nav>
+    </div>
+</header>
+
+<footer th:fragment="podnozje" class="podnozje">
+    <div class="container">
+        <div>
+            <strong>Karton adrese</strong> – javni podaci spojeni po adresi.
+            <span th:if="${ogledniNacin}" class="oznaka ogledno">Ogledni način: prikazani su sintetički podaci</span>
+        </div>
+        <div>
+            <a th:href="@{/podaci}">Izvori i licence</a> ·
+            <a th:href="@{/swagger-ui.html}">API</a> ·
+            <a th:href="@{/api/otvoreni-podaci/indeks15.geojson}">Otvoreni skup (CC BY 4.0)</a> ·
+            <a href="https://github.com/aradovanJava/karton-adrese">Izvorni kod (EUPL-1.2)</a>
+        </div>
+    </div>
+    <script th:src="@{/js/app.js}" defer></script>
+</footer>
+
+<!-- Upis adrese s prijedlozima (datalist puni /js/app.js iz /api/adrese) -->
+<div th:fragment="upis-adrese(ime, vrijednost, oznaka, id)" class="polje">
+    <label th:for="${id}" th:text="${oznaka}">Adresa</label>
+    <input type="search" th:id="${id}" th:name="${ime}" th:value="${vrijednost}" autocomplete="off" required
+           th:attr="list=${id + '-prijedlozi'}" placeholder="npr. Gorjanovićeva ulica 15" data-prijedlozi>
+    <datalist th:id="${id + '-prijedlozi'}"></datalist>
+    <div class="pomoc">Upišite ulicu i kućni broj u Zagrebu.</div>
+</div>
+
+<!-- Jedan objekt u blizini adrese -->
+<div th:fragment="objekt(o)" class="stavka" th:classappend="${o.istaknut} ? 'istaknuto'">
+    <div>
+        <div class="naslov" th:text="${o.naziv}">Naziv</div>
+        <div class="meta">
+            <span th:text="|${o.udaljenostM} m · ${o.minutaHoda} min hoda|">260 m · 4 min hoda</span>
+            <span th:if="${o.adresa != null}" th:text="| · ${o.adresa}|"></span>
+        </div>
+        <div class="meta" th:each="d : ${o.detalji}" th:text="${d}"></div>
+    </div>
+    <div class="desno">
+        <span class="izvor" th:text="${o.datum != null} ? |Izvor: ${o.izvor} · ${o.datum}| : |Izvor: ${o.izvor}|">Izvor</span>
+        <button type="button" class="gumb-tekst" data-prijava
+                th:attr="data-objekt=${o.naziv},data-izvor=${o.datum != null ? o.izvor + ' · ' + o.datum : o.izvor}">Prijavi pogrešku</button>
+    </div>
+</div>
+
+</body>
+</html>

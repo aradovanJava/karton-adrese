@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava('Karta grada 15 minuta')}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container">
+    <section style="padding:40px 0 16px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+        <div>
+            <p class="nadnaslov">Otvoreni podaci u prostoru</p>
+            <h1>Karta grada 15 minuta</h1>
+            <p class="muted" style="margin:0">Kliknite ćeliju mreže 1 km² za detalje o dostupnosti svakodnevnih usluga.</p>
+        </div>
+        <div class="segmentirano" role="group" aria-label="Prikaz na karti">
+            <button type="button" aria-pressed="true" data-nacin="indeks">Indeks 0–6</button>
+            <button type="button" aria-pressed="false" data-nacin="stanovnistvo">Gustoća stanovništva</button>
+        </div>
+    </section>
+
+    <div class="karta-grada">
+        <div id="karta-grada" class="karta" role="region" aria-label="Karta indeksa grada 15 minuta"
+             th:attr="data-lat=${podrucje.centarLat},data-lon=${podrucje.centarLon}"></div>
+        <aside class="legenda" aria-live="polite">
+            <h2>Legenda</h2>
+            <div data-legenda-indeks>
+                <p class="mala muted">Broj vrsta svakodnevnih usluga dostupnih unutar 15 minuta hoda
+                    (<span th:text="${#strings.listJoin(kategorije.![naziv], ', ')}">škola, vrtić…</span>).</p>
+                <div class="ljestvica" aria-hidden="true">
+                    <span style="background:#E8F0FA"></span><span style="background:#D4E2F4"></span><span style="background:#B9D0EC"></span>
+                    <span style="background:#91B5DF"></span><span style="background:#6A98D0"></span><span style="background:#4479BD"></span><span style="background:#1F4C8F"></span>
+                </div>
+                <div class="mala muted" style="display:flex;justify-content:space-between"><span>0</span><span>6</span></div>
+                <span class="izvor">Izvor: izračun Kartona adrese iz otvorenih podataka</span>
+            </div>
+            <div data-legenda-stanovnistvo hidden>
+                <p class="mala muted">Broj stanovnika u ćeliji 1 km² (st./km²).</p>
+                <div class="ljestvica" aria-hidden="true">
+                    <span style="background:#E8F4ED"></span><span style="background:#D0E8D9"></span><span style="background:#AAD5BC"></span>
+                    <span style="background:#7DBB99"></span><span style="background:#4C9A73"></span><span style="background:#2D7955"></span><span style="background:#17563A"></span>
+                </div>
+                <div class="mala muted" style="display:flex;justify-content:space-between"><span>0</span><span>18 000+</span></div>
+                <span class="izvor">Izvor: DZS, Popis 2021. (mreža 1 km²)</span>
+            </div>
+            <div data-detalji style="margin-top:20px">
+                <p class="mala muted">Odaberite ćeliju na karti.</p>
+            </div>
+            <p class="mala" style="margin-top:20px">
+                Preuzmite skup: <a th:href="@{/api/otvoreni-podaci/indeks15.geojson}">GeoJSON</a> ·
+                <a th:href="@{/api/otvoreni-podaci/indeks15.csv}">CSV</a> ·
+                <a th:href="@{/api/otvoreni-podaci/dcat.jsonld}">DCAT-AP</a><br>
+                <span class="muted">Licenca CC BY 4.0</span>
+            </p>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+<script th:src="@{/vendor/leaflet/leaflet.js}"></script>
+<script th:src="@{/js/podloga.js}"></script>
+<script th:src="@{/js/karta-grada.js}"></script>
+</body>
+</html>
