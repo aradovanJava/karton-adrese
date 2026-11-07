@@ -48,7 +48,7 @@ a:hover { color: var(--primary-dark); }
 .nav a { padding: 10px 12px; min-height: 44px; display: inline-flex; align-items: center; border-radius: var(--radius); color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; }
 .nav a:hover { background: var(--bg); color: var(--ink); }
 .nav a[aria-current="page"] { background: #E8F0FA; color: var(--primary-dark); }
-.izbornik-gumb { display: none; }
+.zaglavlje .izbornik-gumb { display: none; }
 
 /* Gumbi i polja */
 .gumb { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: var(--radius); border: 1px solid transparent; background: var(--primary); color: #fff; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
@@ -81,7 +81,7 @@ textarea { min-height: 120px; resize: vertical; }
 /* Kartice i odjeljci */
 .kartica { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 24px; }
 .mreza-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.mreza-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.mreza-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .sazetak-kartica { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
 .sazetak-kartica .ikona { width: 32px; height: 32px; border-radius: 8px; background: #E8F0FA; color: var(--primary-dark); display: grid; place-items: center; flex: none; font-size: 16px; }
 .sazetak-kartica small { display: block; color: var(--muted); font-size: 13px; }
@@ -172,7 +172,8 @@ td.bolje { background: #ECFDF3; }
 /* Karta grada */
 .karta-grada { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; background: var(--surface); }
 .karta-grada .karta { border: 0; border-radius: 0; height: 620px; }
-.legenda { padding: 20px; border-left: 1px solid var(--border); }
+.legenda { padding: 20px; border-left: 1px solid var(--border); overflow-wrap: anywhere; }
+.legenda .izvor { white-space: normal; }
 .ljestvica { display: flex; height: 12px; border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
 .ljestvica span { flex: 1; }
 .segmentirano { display: inline-flex; padding: 4px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
@@ -211,11 +212,13 @@ dialog::backdrop { background: rgb(28 34 48 / .45); }
   .karta-grada .karta { height: 460px; }
 }
 @media (max-width: 680px) {
-  .izbornik-gumb { display: inline-flex; }
+  .zaglavlje .izbornik-gumb { display: inline-flex; }
   .nav { display: none; position: absolute; left: 0; right: 0; top: 64px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px 16px; flex-direction: column; }
   .nav.otvoren { display: flex; }
   .mreza-2 { grid-template-columns: 1fr; }
   .dijalog-podaci { grid-template-columns: 1fr; }
+  .stavka { grid-template-columns: 1fr; }
+  .stavka .desno { align-items: flex-start; text-align: left; flex-direction: row; flex-wrap: wrap; gap: 8px; }
   table.kartice-mobilno thead { display: none; }
   table.kartice-mobilno tr { display: block; border-bottom: 8px solid var(--bg); }
   table.kartice-mobilno td { display: block; border: 0; padding: 6px 12px; }

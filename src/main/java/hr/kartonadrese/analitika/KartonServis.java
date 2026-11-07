@@ -75,7 +75,9 @@ public class KartonServis {
     Karton sastavi(Lokacija l, Profil profil) {
         Map<String, String> naziviIzvora = new HashMap<>();
         Map<String, LocalDate> datumiIzvora = new HashMap<>();
+        Map<String, String> stanjaIzvora = new HashMap<>();
         for (IzvorRepozitorij.IzvorStanje s : izvori.svi()) {
+            stanjaIzvora.put(s.id(), s.status());
             naziviIzvora.put(s.id(), s.izdavatelj() == null ? s.naziv() : s.izdavatelj());
             if (s.datumPodatka() != null) {
                 datumiIzvora.put(s.id(), s.datumPodatka());
@@ -90,7 +92,7 @@ public class KartonServis {
                 p.svi(Blizina.prvih(sortirano, Kategorija.SKOLA, 3)),
                 p.svi(Blizina.prvih(sortirano, Kategorija.VRTIC, 3)),
                 p.svi(Blizina.prvih(sortirano, Kategorija.SREDNJA_SKOLA, 2)));
-        Karton.Prijevoz prijevoz = prijevoz(l, brzina, naziviIzvora, datumiIzvora);
+        Karton.Prijevoz prijevoz = prijevoz(l, brzina, naziviIzvora, datumiIzvora, stanjaIzvora);
         Karton.Zdravlje zdravlje = new Karton.Zdravlje(
                 p.svi(Blizina.prvih(sortirano, Kategorija.ZDRAVSTVO, 3)),
                 p.svi(Blizina.prvih(sortirano, Kategorija.LJEKARNA, 3)));
@@ -145,7 +147,7 @@ public class KartonServis {
     }
 
     private Karton.Prijevoz prijevoz(Lokacija l, double brzina, Map<String, String> nazivi,
-                                     Map<String, LocalDate> datumi) {
+                                     Map<String, LocalDate> datumi, Map<String, String> stanja) {
         List<Stajaliste> blizu = new ArrayList<>(stajalista.uKrugu(l.lat(), l.lon(), POLUMJER_STAJALISTA_M));
         blizu.sort(Comparator.comparingDouble(s -> GeoUtil.udaljenostM(l.lat(), l.lon(), s.lat(), s.lon())));
         TreeSet<String> sveLinije = new TreeSet<>();
@@ -158,8 +160,11 @@ public class KartonServis {
                         GeoUtil.minutaHoda(d, brzina), s.lat(), s.lon()));
             }
         }
-        String izvor = nazivi.getOrDefault("zet-gtfs", "ZET (GTFS)");
-        LocalDate datum = datumi.get("zet-gtfs");
+        // Izvor stajališta je ZET GTFS samo ako je stvarno preuzet; inače su to ogledni podaci.
+        boolean gtfsPreuzet = "OK".equals(stanja.get("zet-gtfs"));
+        String izvor = gtfsPreuzet ? nazivi.getOrDefault("zet-gtfs", "ZET") + " (GTFS)"
+                : nazivi.getOrDefault("ogledni-prijevoz", "Ogledni podaci");
+        LocalDate datum = datumi.get(gtfsPreuzet ? "zet-gtfs" : "ogledni-prijevoz");
         return new Karton.Prijevoz(r, sveLinije.size(), izvor, datum == null ? null : DATUM.format(datum));
     }
 
@@ -198,7 +203,7 @@ public class KartonServis {
                 v -> r.add(new Karton.Kartica("Vrtić", v.udaljenostM() + " m · " + v.minutaHoda() + " min", "vrtic")),
                 () -> r.add(new Karton.Kartica("Vrtić", "nema podatka", "vrtic")));
         int n = k.prijevoz().brojLinija();
-        r.add(new Karton.Kartica("Javni prijevoz", n == 0 ? "nema linija u 600 m" : n + " " + linija(n) + " ZET-a u 600 m",
+        r.add(new Karton.Kartica("Javni prijevoz", n == 0 ? "nema linija u 600 m" : n + " " + linija(n) + " u 600 m",
                 "prijevoz"));
         r.add(new Karton.Kartica("Indeks 15 minuta", k.okolica().oznaka(), "indeks"));
         return r;
