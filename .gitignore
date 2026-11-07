@@ -1,0 +1,26 @@
+# Maven / Java
+target/
+*.class
+*.log
+hs_err_pid*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Python (ML)
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+ml/podaci/*
+!ml/podaci/README.md
+
+# Lokalni podaci i tajne
+podaci/
+.env
+*.local.yml
