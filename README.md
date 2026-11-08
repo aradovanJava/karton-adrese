@@ -2,8 +2,13 @@
 
 **Javni podaci spojeni po adresi.** Upišete zagrebačku adresu i dobijete pregled onoga što oglas za stan ne piše:
 škole i vrtići, javni prijevoz, zdravstvo, kvaliteta zraka (s procjenom modela strojnog učenja), pristupačnost,
-zborna mjesta civilne zaštite, dostupnost svakodnevnih usluga u 15 minuta hoda i gustoća stanovništva.
-Uz svaki podatak su navedeni izdavatelj i datum.
+javne površine (igrališta, parkovi, sportski objekti, gradski vrtovi), zborna mjesta civilne zaštite, dostupnost
+svakodnevnih usluga u 15 minuta hoda i gustoća stanovništva. Uz svaki podatak su navedeni izdavatelj i datum, a sve
+udaljenosti su **zračne, u metrima** (za parkove, gradske vrtove i biciklističke staze mjeri se do ruba).
+
+Karton se prilagođava profilu: **student** odabire svoj fakultet i interese (menza, knjižnica, bicikl, sport) i dobiva
+udaljenost do fakulteta i linije ZET-a bez presjedanja; **obitelj s djecom** dobiva javne površine i „Moj indeks”;
+**osoba s invaliditetom** odabire potrebe i vidi pristupačnost u četiri stanja (pristupačno, djelomično, nije, nema podatka).
 
 Prijava na *Datathon Portala otvorenih podataka* (MPUDT, 2026.).
 
@@ -38,8 +43,11 @@ Prijava na *Datathon Portala otvorenih podataka* (MPUDT, 2026.).
 
 ## 1. Brzi početak (ogledni način, bez Dockera)
 
-U oglednom načinu aplikacija radi **bez interneta i bez baze**: koristi H2 bazu u memoriji, sintetičke ogledne
-podatke za šest adresa (sve s oznakom „ogledno”) i ogledni ONNX model. Tako se brzo provjeri cijeli sustav.
+U oglednom načinu aplikacija radi **bez interneta i bez baze**: koristi H2 bazu u memoriji, ogledne podatke i ogledni
+ONNX model. Tako se brzo provjeri cijeli sustav. Vrtići, zdravstvo, trgovine i stajališta su sintetički (oznaka
+„ogledno”), a osnovne škole, ljekarne, ustanove za osobe s invaliditetom, visoka učilišta, menze, studentska naselja,
+biciklističke staze, javni bicikli, igrališta, sportski objekti, Odmorko i gradski vrtovi **stvarni su isječci** s
+Portala otvorenih podataka Grada Zagreba, a parkovi i dječja igrališta iz OpenStreetMapa (preuzeto 8. 11. 2026.).
 
 ### Preduvjeti
 
@@ -81,6 +89,28 @@ otvorite **http://localhost:8080**.
 
 Ogledne adrese: *Gorjanovićeva ulica 15, Ilica 1, Trg bana Josipa Jelačića 5, Savska cesta 41, Avenija Dubrovnik 15,
 Maksimirska cesta 128*.
+
+### Profili, interesi i potrebe
+
+Profil se bira gumbima na kartonu. Za studente i osobe s invaliditetom pojavljuje se obrazac s dodatnim odabirom.
+Odabir se ne sprema – ostaje samo u poveznici, pa se karton može spremiti ili podijeliti:
+
+| Primjer | Poveznica |
+|---|---|
+| Student, interesi menza i bicikl | `/karton?adresa=Gorjanovićeva ulica 15&profil=student&interes=menza&interes=bicikl` |
+| Student s odabranim fakultetom | `…&profil=student&fakultet=<id iz /api/visoka-ucilista>` |
+| Obitelj s djecom (javne površine, Moj indeks) | `/karton?adresa=Gorjanovićeva ulica 15&profil=obitelj` |
+| Osoba s invaliditetom, kolica | `/karton?adresa=Gorjanovićeva ulica 15&profil=osi&potreba=kolica` |
+
+Kako se računa:
+- **Udaljenost** je zračna (ravna crta od adrese do objekta), prikazana u metrima („260 m”, iznad 1 km „1,2 km”).
+  Za površine i linije (parkovi, gradski vrtovi, biciklističke staze) mjeri se do ruba; ako je adresa u parku, udaljenost je 0.
+- **Indeks 15 minuta** koristi prag zračne udaljenosti koji odgovara 15 minuta hoda: brzina hoda profila × 15 ÷ faktor
+  zaobilaženja 1,3 (≈ 920 m za opći profil, ≈ 635 m za osobu s invaliditetom).
+- **Do mog fakulteta:** zračna udaljenost do odabranog visokog učilišta i linije ZET-a koje staju i na stajalištima do
+  600 m od adrese i na stajalištima do 400 m od fakulteta (presjek linija iz ZET GTFS-a, bez presjedanja).
+- **Pristupačnost** objekata dolazi iz OSM oznake `wheelchair`; ZET-ov GTFS ne sadrži polja `wheelchair_boarding` i
+  `wheelchair_accessible` (provjereno 8. 11. 2026.), pa se pristupačnost stajališta prikazuje kao „nema podatka”.
 
 ### Izgradnja JAR-a
 
@@ -283,13 +313,37 @@ uvozu. Uvoz odbacuje objekte izvan područja grada i duplikate, a za svaki izvor
 bez lokacije, geokodirano, izvan područja, datum podatka.
 
 **Kategorije** (`Kategorija.java`): `SKOLA, VRTIC, LJEKARNA, ZDRAVSTVO, STAJALISTE, TRGOVINA` čine indeks grada 15
-minuta. Ostale su `SREDNJA_SKOLA, KNJIZNICA, KULTURA, PARK, SPORT, PRISTUPACNOST, PJESACKA_ZONA, ZBORNO_MJESTO,
-EVAKUACIJA, GARAZA`.
+minuta. Ostale su `SREDNJA_SKOLA, KNJIZNICA, KULTURA, PARK, SPORT, IGRALISTE, ODMORKO, GRADSKI_VRT, VISOKO_UCILISTE,
+MENZA, STUDENTSKI_DOM, BICIKLISTICKA_STAZA, JAVNI_BICIKL, PRISTUPACNOST, PJESACKA_ZONA, ZBORNO_MJESTO, EVAKUACIJA, GARAZA`.
 
-**Izvori koje treba dovršiti:** izvor `zg-osnovne-skole` je isključen dok se ne upiše točan identifikator skupa s
-portala Grada Zagreba (pretraga „osnovne škole”). Do tada škole dolaze iz OpenStreetMapa (`osm-osnovne-skole`). Ako
-neki skup nema GeoJSON ni CSV/XLSX resurs (npr. granice četvrti samo kao SHP), stranica `/podaci` prikazuje grešku s
-popisom dostupnih formata. Takav sloj pretvorite u GeoJSON (npr. QGIS-om) i dodajte ga kao `GEOJSON_URL`.
+**Linije i površine:** GeoJSON s geometrijom `LineString`/`MultiLineString` (biciklističke staze) ili
+`Polygon`/`MultiPolygon` (gradski vrtovi) sprema se s cijelom geometrijom (stupac `geometrija`, migracija
+`V2__geometrija.sql`). Parkovi iz OpenStreetMapa preuzimaju se s obrisom (`out geom`). Udaljenost se tada mjeri do ruba.
+
+**Novi izvori (studenti, javne površine), provjereni sondom 8. 11. 2026.:**
+
+| `id` | Skup na data.zagreb.hr | Format i geometrija | Zapisa |
+|---|---|---|---|
+| `zg-osnovne-skole` | Geoportal Osnovne škole (smjene, produženi boravak, dvorana) | GeoJSON, točke | 177 |
+| `zg-visoka-ucilista` | Geoportal visokoškolske ustanove | GeoJSON, točke | 75 |
+| `zg-studentski-restoran` | Geoportal Studentski restoran (osvježen 28. 10. 2026.) | GeoJSON, točke | 19 |
+| `zg-studentsko-naselje` | Geoportal Studentsko naselje (osvježen 28. 10. 2026.) | GeoJSON, točke | 4 |
+| `zg-biciklisticke-staze` | Geoportal biciklističke staze (podaci iz lipnja 2022.) | GeoJSON, MultiLineString | 2889 |
+| `zg-javni-bicikli` | Geoportal Sustav javnih bicikala | GeoJSON, točke | 32 |
+| `zg-igralista` | Geoportal javna sportska igrališta | GeoJSON, točke | 170 |
+| `zg-sportski-objekti` | Geoportal Sportski objekti | GeoJSON, točke | 205 |
+| `zg-odmorko` | Geoportal Odmorko (školska godina 2023./2024.) | GeoJSON, točke | 2 |
+| `zg-gradski-vrtovi` | Geoportal gradski vrt | GeoJSON, MultiPolygon | 15 |
+| `zg-knjiznice` | Knjižnice Grada Zagreba | XLSX (koordinate nisu provjerene – po potrebi geokodiranje) | – |
+| `osm-igralista`, `osm-parkovi` | OpenStreetMap: dječja igrališta i parkovi s obrisom | Overpass | ≈ 860 / ≈ 100 |
+
+Napomene iz provjere:
+- **data.gov.hr** odbija veze s poslužitelja izvan Hrvatske (GitHub Actions dobiva „Connection reset”). Zato se
+  knjižnice preuzimaju s data.zagreb.hr; ostali izvori s data.gov.hr rade iz Hrvatske.
+- **ZET GTFS** nema polja o pristupačnosti (`wheelchair_boarding`, `wheelchair_accessible`).
+- Skup „Geoportal pješačka zona” u trenutku provjere je vraćao HTTP 502 – uvoz će ga preuzeti kad bude dostupan.
+- Ako neki skup nema GeoJSON ni CSV/XLSX resurs (npr. samo SHP), stranica `/podaci` prikazuje grešku s popisom
+  dostupnih formata. Takav sloj pretvorite u GeoJSON (npr. QGIS-om) i dodajte ga kao `GEOJSON_URL`.
 
 ### Varijable okruženja
 
@@ -312,6 +366,9 @@ Interaktivna dokumentacija nalazi se na **/swagger-ui.html**, a specifikacija Op
 | Metoda i putanja | Opis |
 |---|---|
 | `GET /api/karton?adresa=…&profil=opcenito\|obitelj\|student\|umirovljenik\|osi` | cijeli karton adrese s izvorima i datumima |
+| `GET /api/karton?…&profil=student&fakultet=<id>&interes=menza,bicikl` | karton s putem do fakulteta i interesima studenta |
+| `GET /api/karton?…&profil=osi&potreba=kolica` | karton s potrebama osobe s invaliditetom |
+| `GET /api/visoka-ucilista` | popis visokih učilišta (id, naziv, adresa, koordinate) za odabir fakulteta |
 | `GET /api/usporedba?a=…&b=…` | usporedba dviju adresa po istim kriterijima |
 | `GET /api/okolica?lat=…&lon=…&r=800&kategorije=SKOLA,VRTIC` | objekti u polumjeru (PostGIS `ST_DWithin`) |
 | `GET /api/indeks15[?celija=CRS3035RES1000mN…E…]` | indeks grada 15 minuta po ćeliji |
@@ -379,13 +436,23 @@ cd ml && python -m pytest -q       # Python: značajke, učitavanje, cijeli tok 
 ```
 
 GitHub Actions (`.github/workflows/ci.yml`) za svaki push i pull request pokreće tri posla:
-1. **Java**: `mvn verify` (21 test: projekcije uspoređene s pyproj-om, uvoz CSV/GeoJSON/GTFS, indeks 15 minuta,
-   API, stranice, otvoreni skup, prijava pogreške, usporedba ONNX modela s Pythonom),
+1. **Java**: `mvn verify` (projekcije uspoređene s pyproj-om, uvoz CSV/GeoJSON/GTFS, geometrija linija i površina
+   (udaljenost do ruba), prikaz u metrima, interesi i potrebe, indeks 15 minuta, API, stranice za sve profile,
+   otvoreni skup, prijava pogreške, usporedba ONNX modela s Pythonom),
 2. **ML**: pytest i treniranje s ONNX izvozom,
 3. **Docker**: `docker compose up` s PostGIS-om i oglednim podacima, zatim provjera API-ja nad pravom bazom.
 
 Workflow `snimke.yml` pokreće aplikaciju i Playwrightom snima glavne stranice (artefakt „snimke-zaslona”). Lokalno:
 `pip install playwright && playwright install chromium && python scripts/snimke.py`.
+
+Workflow `sonda.yml` (**Sonda izvora**) provjerava skupove na portalima i ZET GTFS iz oblaka: ispisuje metapodatke,
+stupce i primjere zapisa te pakira preuzete datoteke u zapis posla. Iz tih datoteka skripta
+`scripts/ogledni_stvarni.py` dopunjuje ogledne podatke stvarnim isječcima:
+
+```bash
+python scripts/sonda.py                                   # preuzima u mapu sonda-izlaz/
+python scripts/ogledni_stvarni.py sonda-izlaz [osm-parkovi-igralista.json]
+```
 
 ---
 
@@ -396,12 +463,12 @@ Sučelje prati Nielsenovih 10 heuristika i WCAG 2.1 AA:
 | Heuristika | U aplikaciji |
 |---|---|
 | Vidljivost stanja sustava | izvor i datum uz svaki podatak; potvrda nakon prijave; stanje uvoza na `/podaci` |
-| Podudarnost sa stvarnim svijetom | minute hoda umjesto koordinata; nazivi kategorija na hrvatskom; brzina hoda prema profilu |
+| Podudarnost sa stvarnim svijetom | udaljenosti u metrima (zračno, jasno označeno); nazivi kategorija na hrvatskom; brzina hoda prema profilu za indeks 15 minuta |
 | Kontrola i sloboda | „Natrag na pretragu”, poveznica za dijeljenje, zatvaranje dijaloga tipkom Esc, slojevi karte |
 | Dosljednost | isti dizajnerski tokeni na svim stranicama i u Figma prototipu |
 | Sprječavanje pogrešaka | prijedlozi adresa, provjera iste adrese u usporedbi, provjera obrasca |
 | Prepoznavanje umjesto prisjećanja | primjeri adresa, profili kao gumbi, ista podloga na svim kartama |
-| Fleksibilnost | profili korisnika, API i widget za napredne korisnike |
+| Fleksibilnost | profili korisnika, interesi studenta i potrebe osoba s invaliditetom (u poveznici, bez spremanja), API i widget |
 | Estetika i minimalizam | sažetak na vrhu, detalji u sekcijama koje se otvaraju |
 | Oporavak od pogrešaka | „Adresu nismo pronašli” s prijedlozima; poruka kad podloga karte nije dostupna |
 | Pomoć i dokumentacija | „Kako računamo?”, stranica O podacima, kartica modela, Swagger |
@@ -443,6 +510,10 @@ mete od najmanje 44 px, tablična alternativa grafu, prilagodba za 375 px i poš
 ---
 
 ## 11. Što je provjereno, a što treba provjeriti
+
+**Provjereno sondom izvora** (`scripts/sonda.py`, GitHub Actions, 8. 11. 2026.): struktura, formati i broj zapisa
+novih skupova s data.zagreb.hr (tablica u odjeljku 4), ZET GTFS bez polja o pristupačnosti, parkovi i dječja igrališta
+iz OpenStreetMapa.
 
 **Provjereno** (lokalno i u GitHub Actionsu):
 - prevođenje i svi testovi (Java 21, Spring Boot 4.1, H2), uključujući učitavanje ONNX modela u Javi i jednak

@@ -4,7 +4,9 @@
     python scripts/snimke.py http://localhost:8080 docs/snimke
 """
 import base64
+import json
 import sys
+import urllib.request
 from pathlib import Path
 from urllib.parse import quote
 
@@ -16,6 +18,12 @@ ISPIS_BASE64 = "--base64" in sys.argv
 A = quote("Gorjanovićeva ulica 15")
 B = quote("Ilica 1")
 
+try:
+    UCILISTA = json.loads(urllib.request.urlopen(BAZA + "/api/visoka-ucilista", timeout=30).read())
+    EFZG = next((u["id"] for u in UCILISTA if u["naziv"] == "Ekonomski fakultet"), "")
+except Exception:  # noqa: BLE001 – snimke bez odabranog fakulteta
+    EFZG = ""
+
 STRANICE = [
     ("01-pocetna", "/", {}),
     ("02-karton", f"/karton?adresa={A}", {"puna": True}),
@@ -26,6 +34,10 @@ STRANICE = [
     ("07-ugradnja", "/ugradnja", {}),
     ("08-prijava-pogreske", f"/karton?adresa={A}", {"dijalog": True}),
     ("09-ortofoto", f"/karton?adresa={A}", {"ortofoto": True}),
+    ("10-karton-student", f"/karton?adresa={A}&profil=student&interes=menza&interes=bicikl&fakultet={EFZG}",
+     {"puna": True}),
+    ("11-karton-obitelj", f"/karton?adresa={A}&profil=obitelj", {"puna": True}),
+    ("12-karton-osi", f"/karton?adresa={A}&profil=osi&potreba=kolica", {"puna": True}),
 ]
 
 IZLAZ.mkdir(parents=True, exist_ok=True)
@@ -34,7 +46,7 @@ with sync_playwright() as p:
     for sirina, visina, sufiks in ((1440, 900, ""), (390, 844, "-mobitel")):
         kontekst = preglednik.new_context(viewport={"width": sirina, "height": visina}, device_scale_factor=1, locale="hr-HR")
         for ime, put, opcije in STRANICE:
-            if sufiks and ime not in ("01-pocetna", "02-karton", "04-usporedba"):
+            if sufiks and ime not in ("01-pocetna", "02-karton", "04-usporedba", "10-karton-student"):
                 continue
             s = kontekst.new_page()
             s.goto(BAZA + put, wait_until="networkidle")
