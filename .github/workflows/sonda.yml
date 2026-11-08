@@ -1,0 +1,23 @@
+name: Sonda izvora
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["implementacija-*"]
+    paths:
+      - "scripts/sonda.py"
+      - ".github/workflows/sonda.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Provjera skupova i ZET GTFS-a
+        run: python scripts/sonda.py
