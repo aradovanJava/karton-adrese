@@ -33,9 +33,9 @@ METEO = ["t2m_sr", "t2m_min", "rh_sr", "oborine", "vjetar_sr", "pblh_sr", "tlak_
 
 def kalendarske_znacajke(datumi: pd.Series) -> pd.DataFrame:
     d = pd.to_datetime(datumi)
-    dan = d.dt.dayofyear.astype(float)
+    dan = d.dt.day_of_year.astype(float)
     mjesec = d.dt.month
-    dow = d.dt.dayofweek
+    dow = d.dt.day_of_week
     return pd.DataFrame(
         {
             "dan_sin": np.sin(2 * math.pi * dan / 365.25),
@@ -79,7 +79,7 @@ def klimatologija(meteo: pd.DataFrame, stupci: list[str]) -> list[dict]:
     Vrijednosti se zaglađuju pomičnim prosjekom od 15 dana (kružno preko kraja godine).
     """
     m = meteo.copy()
-    m["dan"] = pd.to_datetime(m["datum"]).dt.dayofyear
+    m["dan"] = pd.to_datetime(m["datum"]).dt.day_of_year
     po_danu = m.groupby("dan")[stupci].mean().reindex(range(1, 367))
     po_danu.loc[366] = po_danu.loc[366].fillna(po_danu.loc[365])
     po_danu = po_danu.interpolate(limit_direction="both")

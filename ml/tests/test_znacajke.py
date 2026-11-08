@@ -19,7 +19,7 @@ def test_kalendarske_znacajke_za_poznati_datum():
 
 def test_klimatologija_ima_366_dana_i_bez_praznina():
     datumi = pd.date_range("2019-01-01", "2021-12-31", freq="D")
-    meteo = pd.DataFrame({"datum": datumi, "t2m_sr": datumi.dayofyear.astype(float)})
+    meteo = pd.DataFrame({"datum": datumi, "t2m_sr": datumi.day_of_year.astype(float)})
     k = klimatologija(meteo, ["t2m_sr"])
     assert len(k) == 366
     assert [z["dan"] for z in k] == list(range(1, 367))

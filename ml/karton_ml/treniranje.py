@@ -173,7 +173,7 @@ def matrica_tipicne_godine(metapodaci: dict, godina: int) -> tuple[pd.DatetimeIn
         if z in KALENDARSKE:
             stupci.append(kal[z].to_numpy())
         else:
-            stupci.append(np.array([klima[d.dayofyear][z] for d in datumi], dtype=float))
+            stupci.append(np.array([klima[d.day_of_year][z] for d in datumi], dtype=float))
     return datumi, np.column_stack(stupci).astype(np.float32)
 
 

@@ -260,7 +260,7 @@ def ogledni_podaci(od: str = "2016-01-01", do: str = "2025-12-31", seed: int = 4
     rng = np.random.default_rng(seed)
     datumi = pd.date_range(od, do, freq="D")
     n = len(datumi)
-    dan = datumi.dayofyear.to_numpy()
+    dan = datumi.day_of_year.to_numpy()
     sezona = np.cos(2 * np.pi * (dan - 15) / 365.25)  # 1 sredinom siječnja, -1 sredinom srpnja
 
     t2m_sr = 12.0 - 11.0 * sezona + rng.normal(0, 3.0, n)
@@ -273,7 +273,7 @@ def ogledni_podaci(od: str = "2016-01-01", do: str = "2025-12-31", seed: int = 4
     tlak = 1003 + 4 * sezona + rng.normal(0, 6, n)
 
     grijanje = np.isin(datumi.month, [10, 11, 12, 1, 2, 3, 4]).astype(float)
-    vikend = (datumi.dayofweek >= 5).astype(float)
+    vikend = (datumi.day_of_week >= 5).astype(float)
     log_pm = (
         np.log(26)
         + 0.36 * sezona
