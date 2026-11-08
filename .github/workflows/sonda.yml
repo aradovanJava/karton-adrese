@@ -21,3 +21,5 @@ jobs:
           python-version: "3.12"
       - name: Provjera skupova i ZET GTFS-a
         run: python scripts/sonda.py
+        env:
+          SONDA_SAMO_OSM: "1"

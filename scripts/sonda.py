@@ -167,8 +167,34 @@ def sonda_gtfs():
             print(f"  {datoteka} {polje}: {dict(brojac)}")
 
 
+def sonda_overpass():
+    """Parkovi i dječja igrališta iz OpenStreetMapa s geometrijom (za ogledne podatke)."""
+    okvir = "(45.70,15.85,45.90,16.15)"
+    upit = ("[out:json][timeout:180];(way[\"leisure\"=\"park\"][\"name\"]" + okvir
+            + ";relation[\"leisure\"=\"park\"][\"name\"]" + okvir
+            + ";nwr[\"leisure\"=\"playground\"]" + okvir + ";);out geom tags;")
+    zahtjev = urllib.request.Request("https://overpass-api.de/api/interpreter",
+                                     data=urllib.parse.urlencode({"data": upit}).encode(),
+                                     headers={"User-Agent": UA})
+    print("\n=== OVERPASS parkovi i igrališta")
+    try:
+        with urllib.request.urlopen(zahtjev, timeout=240) as odg:
+            podaci = odg.read()
+    except Exception as e:  # noqa: BLE001
+        print(f"  NEDOSTUPNO: {e}")
+        return
+    with open(os.path.join(IZLAZ, "osm-parkovi-igralista.json"), "wb") as d:
+        d.write(podaci)
+    el = json.loads(podaci).get("elements", [])
+    print(f"  elemenata: {len(el)}", collections.Counter((e.get("type"), e.get("tags", {}).get("leisure")) for e in el))
+
+
 def main():
     os.makedirs(IZLAZ, exist_ok=True)
+    if os.environ.get("SONDA_SAMO_OSM"):
+        sonda_overpass()
+        PAKETI.clear()
+        PRETRAGE.clear()
     for portal, paket in PAKETI:
         sonda_paketa(portal, paket)
     for portal, upit in PRETRAGE:
