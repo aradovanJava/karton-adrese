@@ -25,28 +25,14 @@ ZG = "https://data.zagreb.hr"
 GOV = "https://data.gov.hr/ckan"
 
 PAKETI = [
-    (ZG, "geoportal-visokoskolske-ustanove"),
-    (ZG, "geoportal-studentski-restoran"),
-    (ZG, "geoportal-studentsko-naselje"),
-    (GOV, "geoportal-studentska-naselja"),
-    (ZG, "geoportal-sustav-javnih-bicikala"),
-    (ZG, "geoportal-biciklisticke-staze"),
-    (ZG, "geoportal-javna-igralista"),
-    (ZG, "sportski-objekti-grad-zagreb"),
-    (ZG, "geoportal-odmorko"),
-    (ZG, "geoportal-gradski-vrt"),
-    (GOV, "geoportal-osnovne-skole"),
-    (ZG, "geoportal-osnovne-skole"),
-    (ZG, "geoportal-ustanove-za-osobe-s-invaliditetom"),
+    (ZG, "geoportal-sportski-objekti"),
     (ZG, "geoportal-pjesacka-zona"),
-    (GOV, "knjiznice-grada-zagreba1"),
+    (ZG, "geoportal-ljekarne"),
 ]
 PRETRAGE = [
-    (ZG, "sportski objekti"),
-    (GOV, "geoportal sportski objekti"),
-    (ZG, "igrališta"),
-    (ZG, "parkovi"),
-    (ZG, "zelene površine"),
+    (ZG, "knjižnice"),
+    (ZG, "knjiznice grada zagreba"),
+    (ZG, "zelene površine parkovi"),
 ]
 IZLAZ = "sonda-izlaz"
 NAJVISE = 8 * 1024 * 1024
@@ -187,7 +173,8 @@ def main():
         sonda_paketa(portal, paket)
     for portal, upit in PRETRAGE:
         sonda_pretrage(portal, upit)
-    sonda_gtfs()
+    if os.environ.get("SONDA_GTFS"):
+        sonda_gtfs()
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         tar.add(IZLAZ, arcname=IZLAZ)
