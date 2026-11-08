@@ -38,7 +38,7 @@ final class Sazetak {
                             "Geoportal visokoškolske ustanove · ZET GTFS", null))
                     : st.stavke().stream().findFirst().map(o -> new Karton.Stavka(
                             o.kategorijaNaziv() + ": " + o.naziv() + ", " + o.udaljenost() + ".",
-                            o.izvor(), o.datum()))));
+                            o.izvor(), o.datum())));
             case OBRAZOVANJE -> k.obrazovanje().skole().stream().findFirst().map(o -> new Karton.Stavka(
                     "Najbliža osnovna škola, " + o.naziv() + ", udaljena je " + o.udaljenost()
                             + detalj(o, "smjen").map(d -> " (" + d + ")").orElse("") + ".",
