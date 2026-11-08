@@ -94,6 +94,26 @@ otvorite **http://localhost:8080**.
 Ogledne adrese: *Gorjanovićeva ulica 15, Ilica 1, Trg bana Josipa Jelačića 5, Savska cesta 41, Avenija Dubrovnik 15,
 Maksimirska cesta 128*.
 
+### Pokretanje u IntelliJ IDEA (Windows)
+
+1. **File → Open** i odaberite mapu projekta (onu s `pom.xml`). IntelliJ sam učita Maven projekt i preuzme ovisnosti.
+2. Ako IntelliJ ne odabere JDK 21 sam: **File → Project Structure → Project → SDK** → JDK 21 (npr. Amazon Corretto 21
+   ili Eclipse Temurin 21; može se preuzeti iz istog izbornika, *Download JDK*).
+3. Gore desno, u izborniku konfiguracija, nalaze se gotove konfiguracije iz mape `.run/`:
+
+| Konfiguracija | Što radi |
+|---|---|
+| **Karton adrese (ogledni podaci)** | pokreće aplikaciju na http://localhost:8080 bez baze i interneta |
+| Karton adrese (PostGIS) | isto, ali s profilom `postgis` (potreban PostgreSQL + PostGIS, vidi odjeljak 2) |
+| Testovi (mvnw verify) | prevođenje i svi testovi |
+| **Model 1 - priprema Pythona** | stvara `ml\.venv` (Python 3.11+) i instalira pakete – jednom, traje nekoliko minuta |
+| **Model 2 - treniranje (ogledni podaci)** | trenira ogledni model, izvozi ONNX u `model\djordjiceva\` i pokreće Python testove |
+| Model 3 - treniranje (stvarna mjerenja) | trenira na datotekama iz `ml\podaci\djordjiceva\` uz ERA5 s Open-Meteo arhive (odjeljak 3 b) |
+
+Konfiguracije „Model” pozivaju PowerShell skripte iz `scripts\windows\` (`priprema-ml.ps1`, `treniraj-model.ps1`), pa
+ih možete pokrenuti i bez IntelliJ-a, npr. `powershell -ExecutionPolicy Bypass -File scripts\windows\treniraj-model.ps1 -Ogledni`.
+Nakon treniranja ponovno pokrenite aplikaciju da učita novi model.
+
 ### Profili, interesi i potrebe
 
 Profil se bira gumbima na kartonu. Za studente i osobe s invaliditetom pojavljuje se obrazac s dodatnim odabirom.
