@@ -14,6 +14,10 @@ Prijava na *Datathon Portala otvorenih podataka* (MPUDT, 2026.).
 
 ![Karton adrese](docs/snimke/02-karton.png)
 
+Snimke po profilima: [student](docs/snimke/10-karton-student.png) ·
+[obitelj s djecom](docs/snimke/11-karton-obitelj.png) · [osoba s invaliditetom](docs/snimke/12-karton-osi.png) ·
+[student na mobitelu](docs/snimke/10-karton-student-mobitel.png). Snimke se izrađuju automatski (workflow „Snimke zaslona”).
+
 | Sloj | Tehnologija |
 |---|---|
 | Aplikacija | Java 21, Spring Boot 4.1 (Web MVC, JDBC, Flyway, Actuator), Thymeleaf |
