@@ -173,7 +173,7 @@ td.bolje { background: #ECFDF3; }
 .karta-grada { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; background: var(--surface); }
 .karta-grada .karta { border: 0; border-radius: 0; height: 620px; }
 .legenda { padding: 20px; border-left: 1px solid var(--border); overflow-wrap: anywhere; }
-.legenda .izvor { white-space: normal; }
+.legenda .izvor, .do-fakulteta .izvor { white-space: normal; }
 .ljestvica { display: flex; height: 12px; border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
 .ljestvica span { flex: 1; }
 .segmentirano { display: inline-flex; padding: 4px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }

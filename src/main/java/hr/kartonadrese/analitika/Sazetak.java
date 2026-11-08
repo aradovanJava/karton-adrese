@@ -28,6 +28,18 @@ final class Sazetak {
         return r;
     }
 
+    /** „Stajalište Maksimir“, ali ne „Stajalište Stajalište Maksimir“ ni „park Park Ribnjak“. */
+    static String sNazivom(String vrsta, String naziv) {
+        if (naziv == null || naziv.isBlank()) return vrsta;
+        return naziv.toLowerCase(Locale.ROOT).startsWith(vrsta.toLowerCase(Locale.ROOT)) ? naziv : vrsta + " " + naziv;
+    }
+
+    /** Naziv koji samo ponavlja vrstu objekta („Dječje igralište“) ne dodaje informaciju. */
+    static boolean genericki(String naziv, String vrsta) {
+        return naziv == null || naziv.isBlank()
+                || (naziv.toLowerCase(Locale.ROOT).contains(vrsta) && naziv.trim().split("\\s+").length <= 2);
+    }
+
     private static Optional<Karton.Stavka> stavka(Karton k, Sekcija s) {
         return switch (s) {
             case STUDENT -> Optional.ofNullable(k.student()).flatMap(st -> st.fakultet() != null
@@ -44,7 +56,7 @@ final class Sazetak {
                             + detalj(o, "smjen").map(d -> " (" + d + ")").orElse("") + ".",
                     o.izvor(), o.datum()));
             case PRIJEVOZ -> k.prijevoz().stajalista().stream().findFirst().map(st -> new Karton.Stavka(
-                    "Stajalište " + st.naziv() + " udaljeno je " + st.udaljenost()
+                    sNazivom("Stajalište", st.naziv()) + " udaljeno je " + st.udaljenost()
                             + (st.linije().isEmpty() ? "" : " (linije " + String.join(", ", st.linije()) + ")") + ".",
                     k.prijevoz().izvor(), k.prijevoz().datum()));
             case ZDRAVLJE -> k.zdravlje().zdravstvo().stream().findFirst().map(o -> new Karton.Stavka(
@@ -64,10 +76,11 @@ final class Sazetak {
                     "Najbliže zborno mjesto civilne zaštite: " + o.naziv() + ", " + o.udaljenost() + ".",
                     o.izvor(), o.datum()));
             case JAVNE_POVRSINE -> k.javnePovrsine().igralista().stream().findFirst().map(o -> new Karton.Stavka(
-                    "Najbliže igralište (" + o.naziv() + ") udaljeno je " + o.udaljenost()
+                    (genericki(o.naziv(), "igralište") ? "Najbliže igralište" : "Najbliže igralište (" + o.naziv() + ")")
+                            + " udaljeno je " + o.udaljenost()
                             + Optional.ofNullable(k.javnePovrsine().park())
-                                    .map(pk -> pk.udaljenostM() == 0 ? ", a adresa je u parku " + pk.naziv()
-                                            : ", a park " + pk.naziv() + " " + pk.udaljenost() + " (do ruba)")
+                                    .map(pk -> pk.udaljenostM() == 0 ? ", a adresa je u parku (" + pk.naziv() + ")"
+                                            : ", a " + sNazivom("park", pk.naziv()) + " " + pk.udaljenost() + " (do ruba)")
                                     .orElse("") + ".",
                     o.izvor(), o.datum()));
             case OKOLICA -> Optional.of(new Karton.Stavka("U krugu od " + k.okolica().prag() + " (oko 15 minuta hoda) "
