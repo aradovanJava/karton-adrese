@@ -173,15 +173,21 @@ def sonda_overpass():
     upit = ("[out:json][timeout:180];(way[\"leisure\"=\"park\"][\"name\"]" + okvir
             + ";relation[\"leisure\"=\"park\"][\"name\"]" + okvir
             + ";nwr[\"leisure\"=\"playground\"]" + okvir + ";);out geom tags;")
-    zahtjev = urllib.request.Request("https://overpass-api.de/api/interpreter",
-                                     data=urllib.parse.urlencode({"data": upit}).encode(),
-                                     headers={"User-Agent": UA})
     print("\n=== OVERPASS parkovi i igrališta")
-    try:
-        with urllib.request.urlopen(zahtjev, timeout=240) as odg:
-            podaci = odg.read()
-    except Exception as e:  # noqa: BLE001
-        print(f"  NEDOSTUPNO: {e}")
+    podaci = None
+    for posluzitelj in ("https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter",
+                        "https://overpass.private.coffee/api/interpreter", "https://overpass-api.de/api/interpreter"):
+        zahtjev = urllib.request.Request(posluzitelj, data=urllib.parse.urlencode({"data": upit}).encode(),
+                                         headers={"User-Agent": UA})
+        try:
+            with urllib.request.urlopen(zahtjev, timeout=240) as odg:
+                podaci = odg.read()
+            print(f"  poslužitelj: {posluzitelj}")
+            break
+        except Exception as e:  # noqa: BLE001
+            print(f"  {posluzitelj}: {e}")
+            time.sleep(20)
+    if podaci is None:
         return
     with open(os.path.join(IZLAZ, "osm-parkovi-igralista.json"), "wb") as d:
         d.write(podaci)
