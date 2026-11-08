@@ -1,6 +1,7 @@
 package hr.kartonadrese.baza;
 
 import hr.kartonadrese.core.geo.GeoUtil;
+import hr.kartonadrese.core.geo.Geometrija;
 import hr.kartonadrese.core.json.Json;
 import hr.kartonadrese.core.model.Kategorija;
 import hr.kartonadrese.core.model.Poi;
@@ -21,7 +22,7 @@ import java.util.Map;
 @Repository
 public class PoiRepozitorij {
 
-    static final String STUPCI = "id, izvor_id, kategorija, naziv, adresa, lat, lon, atributi, azurirano";
+    static final String STUPCI = "id, izvor_id, kategorija, naziv, adresa, lat, lon, atributi, azurirano, geometrija";
 
     private final JdbcTemplate jdbcTemplate;
     private final JdbcClient jdbc;
@@ -40,7 +41,8 @@ public class PoiRepozitorij {
             rs.getDouble("lat"),
             rs.getDouble("lon"),
             atributi(rs.getString("atributi")),
-            rs.getObject("azurirano", LocalDate.class));
+            rs.getObject("azurirano", LocalDate.class),
+            Geometrija.izJsona(rs.getString("geometrija")));
 
     static Map<String, String> atributi(String json) {
         Map<String, String> m = new LinkedHashMap<>();
@@ -63,12 +65,12 @@ public class PoiRepozitorij {
         for (Poi p : objekti) {
             redovi.add(new Object[] {izvorId, p.kategorija().name(), skrati(p.naziv(), 400), skrati(p.adresa(), 400),
                 p.lat(), p.lon(), p.atributi() == null || p.atributi().isEmpty() ? null : Json.zapisi(p.atributi()),
-                p.azurirano()});
+                p.azurirano(), p.geometrija() == null ? null : p.geometrija().uJson()});
         }
         if (!redovi.isEmpty()) {
             jdbcTemplate.batchUpdate("""
-                    INSERT INTO poi (izvor_id, kategorija, naziv, adresa, lat, lon, atributi, azurirano)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", redovi);
+                    INSERT INTO poi (izvor_id, kategorija, naziv, adresa, lat, lon, atributi, azurirano, geometrija)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", redovi);
         }
         return redovi.size();
     }
@@ -86,6 +88,17 @@ public class PoiRepozitorij {
         return upit.param("minLat", o.minLat()).param("maxLat", o.maxLat())
                 .param("minLon", o.minLon()).param("maxLon", o.maxLon())
                 .query(MAPER).list();
+    }
+
+    /** Objekt po identifikatoru (npr. odabrano visoko učilište). */
+    public java.util.Optional<Poi> poId(long id) {
+        return jdbc.sql("SELECT " + STUPCI + " FROM poi WHERE id = :id").param("id", id).query(MAPER).optional();
+    }
+
+    /** Svi objekti jedne kategorije, abecedno (npr. popis visokih učilišta za odabir). */
+    public List<Poi> kategorija(Kategorija k) {
+        return jdbc.sql("SELECT " + STUPCI + " FROM poi WHERE kategorija = :k ORDER BY naziv, adresa")
+                .param("k", k.name()).query(MAPER).list();
     }
 
     public Map<Kategorija, Integer> brojPoKategoriji() {

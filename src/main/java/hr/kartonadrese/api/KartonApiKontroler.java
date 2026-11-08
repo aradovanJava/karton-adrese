@@ -10,6 +10,7 @@ import hr.kartonadrese.baza.ProstornaPretraga;
 import hr.kartonadrese.core.analitika.Blizina;
 import hr.kartonadrese.core.model.Celija;
 import hr.kartonadrese.core.model.Kategorija;
+import hr.kartonadrese.core.model.Postavke;
 import hr.kartonadrese.core.model.Profil;
 import hr.kartonadrese.core.ml.SezonskaProcjena;
 import hr.kartonadrese.geokod.Geokoder;
@@ -67,10 +68,27 @@ public class KartonApiKontroler {
             + "sigurnost, okolica u 15 minuta i stanovništvo za zadanu adresu u Zagrebu.")
     public Karton karton(@Parameter(example = "Gorjanovićeva ulica 15") @RequestParam String adresa,
                          @Parameter(description = "opcenito, obitelj, student, umirovljenik, osi")
-                         @RequestParam(defaultValue = "opcenito") String profil) {
-        return kartoni.karton(adresa, Profil.izTeksta(profil))
+                         @RequestParam(defaultValue = "opcenito") String profil,
+                         @Parameter(description = "Identifikator visokog učilišta (/api/visoka-ucilista), za profil student")
+                         @RequestParam(required = false) String fakultet,
+                         @Parameter(description = "Interesi studenta: menza, knjiznica, bicikl, sport (zarezom ili ponovljeno)")
+                         @RequestParam(required = false) List<String> interes,
+                         @Parameter(description = "Potrebe: kolica, otezano_hodanje, slabovidnost")
+                         @RequestParam(required = false) List<String> potreba) {
+        return kartoni.karton(adresa, Profil.izTeksta(profil), Postavke.iz(fakultet, interes, potreba))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Adresu nismo pronašli. Provjerite kućni broj ili odaberite adresu s popisa."));
+    }
+
+    /** Stavka popisa visokih učilišta. */
+    public record VisokoUciliste(long id, String naziv, String adresa, double lat, double lon) {
+    }
+
+    @GetMapping("/visoka-ucilista")
+    @Operation(summary = "Visoka učilišta (Geoportal Grada Zagreba) za odabir \"Moj fakultet\"")
+    public List<VisokoUciliste> visokaUcilista() {
+        return kartoni.visokaUcilista().stream()
+                .map(p -> new VisokoUciliste(p.id(), p.naziv(), p.adresa(), p.lat(), p.lon())).toList();
     }
 
     @GetMapping("/usporedba")

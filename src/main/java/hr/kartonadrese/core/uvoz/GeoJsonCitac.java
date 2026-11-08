@@ -1,5 +1,6 @@
 package hr.kartonadrese.core.uvoz;
 
+import hr.kartonadrese.core.geo.Geometrija;
 import hr.kartonadrese.core.geo.Htrs96Tm;
 import hr.kartonadrese.core.geo.Poligon;
 import hr.kartonadrese.core.json.Json;
@@ -13,8 +14,10 @@ import java.util.Optional;
 /**
  * Čita GeoJSON (FeatureCollection) u uvozne zapise.
  *
- * <p>Točke daju koordinate izravno; poligoni i linije zamjenjuju se središtem. Ako su
- * koordinate u HTRS96/TM (npr. izvoz iz Geoportala Grada Zagreba), pretvaraju se u WGS84.
+ * <p>Točke daju koordinate izravno. Linije i poligoni dobivaju reprezentativnu točku (prosjek
+ * vrhova) i cijelu geometriju, kako bi se udaljenost mogla mjeriti do ruba (biciklističke
+ * staze, parkovi, gradski vrtovi). Ako su koordinate u HTRS96/TM (npr. izvoz iz Geoportala
+ * Grada Zagreba), pretvaraju se u WGS84.
  */
 public final class GeoJsonCitac {
 
@@ -22,6 +25,14 @@ public final class GeoJsonCitac {
     }
 
     public static PrepoznavanjePolja.Rezultat procitaj(String geojson) {
+        return procitaj(geojson, null);
+    }
+
+    /**
+     * Kao {@link #procitaj(String)}, uz izričito zadano svojstvo s nazivom objekta
+     * (npr. {@code lokacija} kad svojstvo {@code Naziv} opisuje program, a ne mjesto).
+     */
+    public static PrepoznavanjePolja.Rezultat procitaj(String geojson, String svojstvoNaziva) {
         Map<String, Object> korijen = Json.objekt(geojson);
         List<Object> objekti = "Feature".equals(korijen.get("type")) ? List.of(korijen) : Json.niz(korijen, "features");
         List<UvozniZapis> zapisi = new ArrayList<>();
@@ -29,8 +40,13 @@ public final class GeoJsonCitac {
         int bezLokacije = 0;
         for (Object o : objekti) {
             Map<String, String> svojstva = svojstva(Json.mapa(o, "properties"));
-            Optional<double[]> tocka = tocka(Json.mapa(o, "geometry"));
-            String naziv = PrepoznavanjePolja.nazivIzSvojstava(svojstva);
+            Map<String, Object> g = Json.mapa(o, "geometry");
+            Optional<double[]> tocka = tocka(g);
+            Geometrija geometrija = geometrija(g);
+            String naziv = svojstvoNaziva == null ? null : vrijednost(svojstva, svojstvoNaziva);
+            if (naziv == null) {
+                naziv = PrepoznavanjePolja.nazivIzSvojstava(svojstva);
+            }
             String adresa = PrepoznavanjePolja.adresaIzSvojstava(svojstva);
             if (naziv == null) {
                 naziv = adresa;
@@ -44,7 +60,7 @@ public final class GeoJsonCitac {
                 continue;
             }
             zapisi.add(new UvozniZapis(naziv, adresa, tocka.map(t -> t[0]).orElse(null),
-                    tocka.map(t -> t[1]).orElse(null), svojstva));
+                    tocka.map(t -> t[1]).orElse(null), svojstva, geometrija));
         }
         return new PrepoznavanjePolja.Rezultat(zapisi, bezNaziva, bezLokacije, "GeoJSON (svojstva objekata)");
     }
@@ -74,6 +90,51 @@ public final class GeoJsonCitac {
             }
         }
         return rezultat;
+    }
+
+    private static String vrijednost(Map<String, String> svojstva, String kljuc) {
+        for (Map.Entry<String, String> e : svojstva.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(kljuc) && e.getValue() != null && !e.getValue().isBlank()) {
+                return e.getValue().trim();
+            }
+        }
+        return null;
+    }
+
+    /** Linija ili površina iz GeoJSON geometrije ({@code null} za točke i nepoznate vrste). */
+    public static Geometrija geometrija(Map<String, Object> g) {
+        String tip = String.valueOf(g.get("type"));
+        if (!(g.get("coordinates") instanceof List<?> k) || k.isEmpty()) {
+            return null;
+        }
+        List<double[][]> dijelovi = new ArrayList<>();
+        switch (tip) {
+            case "LineString" -> dijelovi.add(latLon(k));
+            case "MultiLineString", "Polygon" -> k.forEach(d -> dijelovi.add(latLon(d)));
+            case "MultiPolygon" -> k.forEach(p -> {
+                if (p instanceof List<?> prstenovi) {
+                    prstenovi.forEach(d -> dijelovi.add(latLon(d)));
+                }
+            });
+            default -> {
+                return null;
+            }
+        }
+        dijelovi.removeIf(d -> d.length == 0);
+        if (dijelovi.isEmpty()) {
+            return null;
+        }
+        return new Geometrija(tip.contains("Polygon") ? Geometrija.Tip.POVRSINA : Geometrija.Tip.LINIJA, dijelovi);
+    }
+
+    /** Niz točaka GeoJSON-a ({lon, lat} ili HTRS96/TM) u {lat, lon}. */
+    private static double[][] latLon(Object o) {
+        double[][] p = prsten(o);
+        double[][] r = new double[p.length][];
+        for (int i = 0; i < p.length; i++) {
+            r[i] = new double[] {p[i][1], p[i][0]};
+        }
+        return r;
     }
 
     private static Map<String, String> svojstva(Map<String, Object> izvorna) {

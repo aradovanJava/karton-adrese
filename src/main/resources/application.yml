@@ -167,15 +167,102 @@ karton:
       paket: registar-naziva-ulica-adresna-prostorna-jedinica-za-podrucje-grada-zagreba
       formati: [CSV, XLSX, XLS]
     - id: zg-osnovne-skole
-      naziv: Osnovne škole Grada Zagreba (smjene, produženi boravak)
+      naziv: Geoportal – osnovne škole (smjene, produženi boravak, sportska dvorana)
       izdavatelj: Grad Zagreb
       licenca: Otvorena dozvola
       vrsta: CKAN
       portal: https://data.zagreb.hr
-      # Upišite identifikator skupa s portala (pretraga: package_search?q=osnovne+škole) i uključite izvor.
-      paket: osnovne-skole
+      paket: geoportal-osnovne-skole
+      formati: [GEOJSON, CSV]
       kategorija: SKOLA
-      omogucen: false
+
+    # --- Studentski život (profil "Student") ---
+    - id: zg-visoka-ucilista
+      naziv: Geoportal – visokoškolske ustanove
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-visokoskolske-ustanove
+      formati: [GEOJSON, CSV]
+      kategorija: VISOKO_UCILISTE
+    - id: zg-studentski-restoran
+      naziv: Geoportal – studentski restorani
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-studentski-restoran
+      formati: [GEOJSON]
+      kategorija: MENZA
+    - id: zg-studentsko-naselje
+      naziv: Geoportal – studentska naselja
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-studentsko-naselje
+      formati: [GEOJSON]
+      kategorija: STUDENTSKI_DOM
+    - id: zg-biciklisticke-staze
+      naziv: Geoportal – biciklističke staze (linije)
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-biciklisticke-staze
+      formati: [GEOJSON]
+      stupac-naziv: lokacija
+      kategorija: BICIKLISTICKA_STAZA
+    - id: zg-javni-bicikli
+      naziv: Geoportal – sustav javnih bicikala
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-sustav-javnih-bicikala
+      formati: [GEOJSON, CSV]
+      kategorija: JAVNI_BICIKL
+
+    # --- Javne površine (profil "Obitelj s djecom") ---
+    - id: zg-igralista
+      naziv: Geoportal – javna sportska i dječja igrališta
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-javna-igralista
+      formati: [GEOJSON, CSV]
+      stupac-naziv: lokacija
+      kategorija: IGRALISTE
+    - id: zg-sportski-objekti
+      naziv: Geoportal – sportski objekti
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-sportski-objekti
+      formati: [GEOJSON, CSV]
+      kategorija: SPORT
+    - id: zg-odmorko
+      naziv: Geoportal – Odmorko (besplatne sportske aktivnosti za učenike)
+      izdavatelj: Grad Zagreb · Školski sportski savez
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-odmorko
+      formati: [GEOJSON, CSV]
+      stupac-naziv: lokacija
+      kategorija: ODMORKO
+    - id: zg-gradski-vrtovi
+      naziv: Geoportal – gradski vrtovi (površine)
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
+      vrsta: CKAN
+      portal: https://data.zagreb.hr
+      paket: geoportal-gradski-vrt
+      formati: [GEOJSON]
+      kategorija: GRADSKI_VRT
 
     # --- Portal otvorenih podataka RH (data.gov.hr) ---
     - id: gov-srednje-skole
@@ -186,13 +273,15 @@ karton:
       portal: https://data.gov.hr/ckan
       paket: geoportal-srednje-skole
       kategorija: SREDNJA_SKOLA
-    - id: gov-knjiznice
+    - id: zg-knjiznice
       naziv: Knjižnice Grada Zagreba
-      izdavatelj: Grad Zagreb (data.gov.hr)
-      licenca: CC BY 4.0
+      izdavatelj: Grad Zagreb
+      licenca: Otvorena dozvola
       vrsta: CKAN
-      portal: https://data.gov.hr/ckan
+      # Isti skup je i na data.gov.hr, ali data.gov.hr odbija veze s poslužitelja izvan Hrvatske (CI).
+      portal: https://data.zagreb.hr
       paket: knjiznice-grada-zagreba1
+      formati: [XLSX, CSV, GEOJSON]
       kategorija: KNJIZNICA
     - id: gov-kultura
       naziv: Geoportal – kulturne ustanove
@@ -238,7 +327,9 @@ karton:
       kategorija: TRGOVINA
       poveznica: https://www.openstreetmap.org/copyright
     - id: osm-osnovne-skole
-      naziv: Osnovne škole (OpenStreetMap, dok skup Grada nije uključen)
+      # Isključeno: osnovne škole sada dolaze iz skupa Geoportal Osnovne škole (zg-osnovne-skole).
+      omogucen: false
+      naziv: Osnovne škole (OpenStreetMap, rezervni izvor)
       izdavatelj: Suradnici OpenStreetMapa
       licenca: ODbL
       vrsta: OVERPASS
@@ -253,13 +344,13 @@ karton:
       upit: nwr["leisure"="park"]["name"]
       kategorija: PARK
       poveznica: https://www.openstreetmap.org/copyright
-    - id: osm-sport
-      naziv: Igrališta i sportski objekti (OpenStreetMap)
+    - id: osm-igralista
+      naziv: Dječja igrališta (OpenStreetMap)
       izdavatelj: Suradnici OpenStreetMapa
       licenca: ODbL
       vrsta: OVERPASS
-      upit: nwr["leisure"~"^(playground|sports_centre)$"]
-      kategorija: SPORT
+      upit: nwr["leisure"="playground"]
+      kategorija: IGRALISTE
       poveznica: https://www.openstreetmap.org/copyright
 
 ---

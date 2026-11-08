@@ -28,6 +28,42 @@
         </span>
     </nav>
 
+    <form class="osobno" method="get" th:action="@{/karton}"
+          th:if="${k.profil.name() == 'STUDENT' or k.profil.name() == 'OSI'}"
+          th:attr="aria-label=${k.profil.name() == 'STUDENT'} ? 'Vaši interesi' : 'Vaše potrebe'" data-osobno>
+        <input type="hidden" name="adresa" th:value="${k.adresa}">
+        <input type="hidden" name="profil" th:value="${k.profil.oznaka}">
+        <div class="osobno-glava">
+            <strong th:text="${k.profil.name() == 'STUDENT'} ? 'Prilagodite karton svojim interesima' : 'Prilagodite karton svojim potrebama'">Prilagodite karton</strong>
+            <span class="mala muted">Odabir ostaje samo u poveznici ove stranice — ništa ne spremamo.</span>
+        </div>
+        <div class="polje" th:if="${k.profil.name() == 'STUDENT'}">
+            <label for="fakultet">Fakultet ili visoko učilište</label>
+            <select id="fakultet" name="fakultet">
+                <option value="">— odaberite —</option>
+                <option th:each="f : ${visokaUcilista}" th:value="${f.id}"
+                        th:selected="${postavke.fakultetId != null and postavke.fakultetId == f.id}"
+                        th:text="${f.adresa != null} ? |${f.naziv} (${f.adresa})| : ${f.naziv}">Ekonomski fakultet</option>
+            </select>
+            <div class="pomoc">Izvor: Grad Zagreb – Geoportal visokoškolske ustanove</div>
+        </div>
+        <fieldset class="cipovi" th:if="${k.profil.name() == 'STUDENT'}">
+            <legend>Što vam je važno?</legend>
+            <label class="cip" th:each="i : ${sviInteresi}">
+                <input type="checkbox" name="interes" th:value="${i.oznaka}" th:checked="${postavke.imaInteres(i)}">
+                <span th:text="${i.naziv}">Menza</span>
+            </label>
+        </fieldset>
+        <fieldset class="cipovi" th:if="${k.profil.name() == 'OSI'}">
+            <legend>Vaše potrebe</legend>
+            <label class="cip" th:each="pt : ${svePotrebe}">
+                <input type="checkbox" name="potreba" th:value="${pt.oznaka}" th:checked="${postavke.imaPotrebu(pt)}">
+                <span th:text="${pt.naziv}">Kolica</span>
+            </label>
+        </fieldset>
+        <button type="submit" class="gumb sekundarni malen" data-primijeni>Primijeni</button>
+    </form>
+
     <div class="obavijest info" th:if="${k.ogledni}" role="note">
         <span aria-hidden="true">ℹ</span>
         <span>Prikazani su <strong>ogledni (sintetički) podaci</strong> za rad bez interneta. Pokrenite aplikaciju s profilom
@@ -41,10 +77,13 @@
             <div class="mreza-4" style="margin-bottom:16px">
                 <div class="sazetak-kartica" th:each="c : ${k.kartice}">
                     <span class="ikona" aria-hidden="true"
-                          th:text="${c.ikona == 'skola' ? '🎓' : (c.ikona == 'vrtic' ? '🧸' : (c.ikona == 'prijevoz' ? '🚋' : '◎'))}">◎</span>
+                          th:text="${c.ikona == 'skola' ? '🎓' : (c.ikona == 'vrtic' ? '🧸' : (c.ikona == 'prijevoz' ? '🚋' : (c.ikona == 'igraliste' ? '⚽' : '◎')))}">◎</span>
                     <div><small th:text="${c.oznaka}">Najbliža škola</small><strong th:text="${c.vrijednost}">260 m</strong></div>
                 </div>
             </div>
+
+            <p class="mala muted napomena-udaljenost">ⓘ Udaljenosti su zračne (ravna crta od adrese do objekta) i
+                prikazane su u metrima. Za parkove, gradske vrtove i biciklističke staze mjerimo do ruba.</p>
 
             <section class="sazetak" aria-labelledby="sazetak-naslov" th:if="${!k.sazetak.isEmpty()}">
                 <h2 id="sazetak-naslov"><span class="oznaka ai">Sažetak iz podataka</span> Vrijedi znati</h2>
@@ -57,6 +96,47 @@
             </section>
 
             <th:block th:each="s, st : ${k.redoslijed}">
+
+                <details class="sekcija" th:if="${s.name() == 'STUDENT' and k.student != null}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">🎓</span>
+                        <span><strong>Studentski život</strong>
+                            <small th:text="${k.student.fakultet != null} ? |Do fakulteta ${k.student.fakultet.udaljenost()}| : 'Menze, knjižnice, bicikl i sport u blizini'">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <div class="do-fakulteta" th:if="${k.student.fakultet != null}" th:with="f=${k.student.fakultet}">
+                            <small>Do mog fakulteta</small>
+                            <strong th:text="${f.naziv}">Ekonomski fakultet</strong>
+                            <span th:text="${f.adresa != null} ? |${f.adresa} · ${f.udaljenost()} zračne udaljenosti| : |${f.udaljenost()} zračne udaljenosti|">780 m</span>
+                            <div class="linije" th:if="${!f.linijeBezPresjedanja.isEmpty()}">
+                                <span class="mala">ZET bez presjedanja:</span>
+                                <span class="linija" th:each="l : ${f.linijeBezPresjedanja}" th:text="${l}">4</span>
+                            </div>
+                            <p class="mala" th:if="${f.linijeBezPresjedanja.isEmpty()}"
+                               th:text="${f.stajalistaUBlizini} ? 'Nema izravne linije ZET-a – potrebno je presjedanje.' : 'U blizini adrese ili fakulteta nema stajališta ZET-a.'">Nema izravne linije</p>
+                            <span class="izvor">Izvor: Grad Zagreb – Geoportal visokoškolske ustanove · ZET GTFS (stajališta do 600 m od adrese i 400 m od fakulteta)</span>
+                        </div>
+                        <p class="nema" th:if="${k.student.fakultet == null}">Odaberite fakultet iznad kako bismo prikazali udaljenost i izravne linije ZET-a.</p>
+                        <th:block th:each="o : ${k.student.stavke}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <p class="mala muted" th:if="${k.student.staze() != null}"
+                           th:text="|Biciklističkih staza u krugu od 1 km: oko ${k.student.staze()}.|"></p>
+                    </div>
+                </details>
+
+                <details class="sekcija" th:if="${s.name() == 'JAVNE_POVRSINE'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
+                    <summary><span class="ikona" aria-hidden="true">🌳</span>
+                        <span><strong>Javne površine i igra</strong>
+                            <small th:text="${k.javnePovrsine.prazno()} ? 'Nema podataka' : |Igralište ${k.javnePovrsine.igralista.isEmpty() ? '–' : k.javnePovrsine.igralista[0].udaljenost()} · park ${k.javnePovrsine.park == null ? '–' : (k.javnePovrsine.park.udaljenostM == 0 ? 'adresa je u parku' : k.javnePovrsine.park.udaljenost())}|">sažetak</small></span>
+                    </summary>
+                    <div class="sekcija-tijelo">
+                        <th:block th:each="o : ${k.javnePovrsine.igralista}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <th:block th:if="${k.javnePovrsine.park != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.javnePovrsine.park})}"></div></th:block>
+                        <th:block th:each="o : ${k.javnePovrsine.sport}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
+                        <th:block th:if="${k.javnePovrsine.odmorko != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.javnePovrsine.odmorko})}"></div></th:block>
+                        <th:block th:if="${k.javnePovrsine.gradskiVrt != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.javnePovrsine.gradskiVrt})}"></div></th:block>
+                        <p class="nema" th:if="${k.javnePovrsine.prazno()}">Nema podataka o javnim površinama u blizini.</p>
+                        <p class="mala muted">Do parka i gradskog vrta mjerimo do ruba površine, a ne do njezina središta.</p>
+                    </div>
+                </details>
 
                 <details class="sekcija" th:if="${s.name() == 'OBRAZOVANJE'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">🎓</span>
@@ -80,13 +160,14 @@
                 <details class="sekcija" th:if="${s.name() == 'PRIJEVOZ'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">🚋</span>
                         <span><strong>Javni prijevoz</strong>
-                            <small th:text="${k.prijevoz.stajalista.isEmpty()} ? 'Nema stajališta u 600 m' : |${k.prijevoz.stajalista[0].udaljenostM} m do najbližeg stajališta · ${k.prijevoz.brojLinija} linija u 600 m|">sažetak</small></span>
+                            <small th:text="${k.prijevoz.stajalista.isEmpty()} ? 'Nema stajališta u 600 m' : |${k.prijevoz.stajalista[0].udaljenost()} do najbližeg stajališta · ${k.prijevoz.brojLinija} linija u 600 m|">sažetak</small></span>
                     </summary>
                     <div class="sekcija-tijelo">
                         <div class="stavka" th:each="t : ${k.prijevoz.stajalista}">
                             <div>
                                 <div class="naslov" th:text="${t.naziv}">Jordanovac</div>
-                                <div class="meta" th:text="|${t.udaljenostM} m · ${t.minutaHoda} min hoda · ${t.vrsta}|"></div>
+                                <div class="meta" th:text="|${t.udaljenost()} · ${t.vrsta}|"></div>
+                                <div class="meta" th:if="${k.profil.name() == 'OSI'}"><span class="pristup nema-podatka">♿ pristupačnost: nema podatka (ZET GTFS)</span></div>
                                 <div class="linije" style="margin-top:4px" th:if="${!t.linije.isEmpty()}">
                                     <span class="linija" th:each="l : ${t.linije}" th:text="${l}"
                                           th:classappend="${t.vrsta == 'autobus'} ? 'bus'">4</span>
@@ -105,7 +186,7 @@
                 <details class="sekcija" th:if="${s.name() == 'ZDRAVLJE'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">✚</span>
                         <span><strong>Zdravlje</strong>
-                            <small th:text="${k.zdravlje.zdravstvo.isEmpty()} ? 'Nema podataka' : |Najbliža ustanova ${k.zdravlje.zdravstvo[0].minutaHoda} min hoda|">sažetak</small></span>
+                            <small th:text="${k.zdravlje.zdravstvo.isEmpty()} ? 'Nema podataka' : |Najbliža ustanova ${k.zdravlje.zdravstvo[0].udaljenost()}|">sažetak</small></span>
                     </summary>
                     <div class="sekcija-tijelo">
                         <h3 style="margin-top:12px">Domovi zdravlja i ambulante</h3>
@@ -126,7 +207,7 @@
                         <div class="stavka">
                             <div>
                                 <div class="naslov" th:text="|Mjerna postaja ${k.zrak.postaja}|">Đorđićeva ulica</div>
-                                <div class="meta" th:text="|${k.zrak.udaljenostM} m od adrese · ${k.zrak.mreza}|"></div>
+                                <div class="meta" th:text="|${k.zrak.udaljenost()} od adrese · ${k.zrak.mreza}|"></div>
                                 <div class="meta" th:if="${k.zrak.prosjekPm10 != null}"
                                      th:text="|${k.zrak.godina}.: prosjek PM10 ${#numbers.formatDecimal(k.zrak.prosjekPm10, 1, 1, 'COMMA')} µg/m³ · ${k.zrak.danaIznad50} dana iznad dnevne granice (50 µg/m³)|"></div>
                             </div>
@@ -160,20 +241,38 @@
                 <details class="sekcija" th:if="${s.name() == 'PRISTUPACNOST'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">♿</span>
                         <span><strong>Pristupačnost</strong>
-                            <small th:text="|${k.pristupacnost.ustanove.size()} ustanova za osobe s invaliditetom u blizini|">sažetak</small></span>
+                            <small th:text="${k.pristupacnost.pjesackaZona != null} ? |${k.pristupacnost.ustanove.size()} ustanove u blizini · pješačka zona ${k.pristupacnost.pjesackaZona.udaljenost()}| : |${k.pristupacnost.ustanove.size()} ustanove za osobe s invaliditetom u blizini|">sažetak</small></span>
                     </summary>
                     <div class="sekcija-tijelo">
                         <th:block th:each="o : ${k.pristupacnost.ustanove}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
-                        <th:block th:if="${k.pristupacnost.pjesackaZona != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.pristupacnost.pjesackaZona})}"></div></th:block>
-                        <th:block th:each="o : ${k.pristupacnost.tramvajska}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
-                        <p class="nema" th:if="${k.pristupacnost.ustanove.isEmpty() and k.pristupacnost.pjesackaZona == null}">Nema podataka u blizini.</p>
+                        <th:block th:if="${k.pristupacnost.pjesackaZona != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.pristupacnost.pjesackaZona})}"></div>
+                            <p class="mala muted">Pješačka zona znači promet bez automobila. Kaldrma i nagibi (npr. Gornji grad) mogu otežati kretanje kolicima.</p></th:block>
+                        <div class="stavka">
+                            <div>
+                                <span class="pristup nema-podatka">♿ <span th:text="${k.pristupacnost.stajalista}">nema podatka</span></span>
+                                <div class="naslov">Pristupačnost stajališta i vozila</div>
+                                <div class="meta" th:text="${k.pristupacnost.napomenaStajalista}">ZET ne objavljuje podatak.</div>
+                            </div>
+                            <div class="desno"><span class="izvor">Izvor: ZET GTFS · provjereno 8. 11. 2026.</span></div>
+                        </div>
+                        <div class="pristup-legenda" aria-label="Oznake pristupačnosti">
+                            <span class="pristup da">♿ pristupačno</span>
+                            <span class="pristup djelomicno">♿ djelomično pristupačno</span>
+                            <span class="pristup ne">♿ nije pristupačno</span>
+                            <span class="pristup nema-podatka">♿ nema podatka</span>
+                        </div>
+                        <p class="mala muted" th:if="${k.profil.name() == 'OSI'}">Stanje pristupačnosti objekata dolazi iz oznake
+                            <code>wheelchair</code> u OpenStreetMapu; „nema podatka” nikad ne prikazujemo kao „pristupačno” ni „nepristupačno”.</p>
+                        <p class="mala" th:if="${!postavke.potrebe.isEmpty()}">Prikaz je prilagođen odabranim potrebama. Rute bez stepenica i
+                            strmih nagiba planirane su uz izračun udaljenosti po pješačkoj mreži.</p>
+                        <p class="nema" th:if="${k.pristupacnost.ustanove.isEmpty() and k.pristupacnost.pjesackaZona == null}">Nema podataka o ustanovama u blizini.</p>
                     </div>
                 </details>
 
                 <details class="sekcija" th:if="${s.name() == 'POTRES'}" th:attr="open=${st.index < 2 ? 'open' : null}" th:id="${s.sidro}">
                     <summary><span class="ikona" aria-hidden="true">⛑</span>
                         <span><strong>U slučaju potresa</strong>
-                            <small th:text="${k.potres.zbornoMjesto != null} ? |${k.potres.zbornoMjesto.minutaHoda} min do zbornog mjesta| : 'Nema podataka'">sažetak</small></span>
+                            <small th:text="${k.potres.zbornoMjesto != null} ? |${k.potres.zbornoMjesto.udaljenost()} do zbornog mjesta| : 'Nema podataka'">sažetak</small></span>
                     </summary>
                     <div class="sekcija-tijelo">
                         <th:block th:if="${k.potres.zbornoMjesto != null}"><div th:replace="~{fragmenti/raspored :: objekt(${k.potres.zbornoMjesto})}"></div></th:block>
@@ -189,12 +288,23 @@
                     </summary>
                     <div class="sekcija-tijelo">
                         <p style="margin-top:12px"><span class="indeks" th:text="${k.okolica.oznaka()}">5/6</span>
-                            <span class="muted">vrsta svakodnevnih usluga dostupno je pješice unutar 15 minuta.</span></p>
+                            <span class="muted" th:text="|vrsta svakodnevnih usluga je u krugu od ${k.okolica.prag()} (oko 15 minuta hoda).|">vrsta usluga</span></p>
                         <p class="mala" th:if="${!k.okolica.nedostaju.isEmpty()}"
-                           th:text="|Nedostaje u 15 minuta: ${#strings.listJoin(k.okolica.nedostaju, ', ')}|"></p>
+                           th:text="|Dalje od ${k.okolica.prag()}: ${#strings.listJoin(k.okolica.nedostaju, ', ')}|"></p>
+                        <th:block th:if="${k.mojIndeks != null}">
+                            <h3 style="margin-top:12px" th:text="${k.mojIndeks.naziv}">Moj indeks</h3>
+                            <p class="mala muted" th:text="|${k.mojIndeks.dostupno()} od ${k.mojIndeks.stavke.size()} u krugu od ${k.mojIndeks.prag()}|"></p>
+                            <ul class="moj-indeks">
+                                <li th:each="x : ${k.mojIndeks.stavke}" th:classappend="${x.dostupno} ? 'dostupno'">
+                                    <span aria-hidden="true" th:text="${x.dostupno} ? '✓' : '✕'">✓</span>
+                                    <strong th:text="${x.naziv}">Igralište</strong>
+                                    <small th:text="${x.udaljenost()}">570 m</small>
+                                </li>
+                            </ul>
+                        </th:block>
                         <th:block th:each="o : ${k.okolica.najblizi}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
                         <th:block th:if="${!k.okolica.ostalo.isEmpty()}">
-                            <h3 style="margin-top:12px">Parkovi, knjižnice i sport</h3>
+                            <h3 style="margin-top:12px">Knjižnice i kultura</h3>
                             <th:block th:each="o : ${k.okolica.ostalo}"><div th:replace="~{fragmenti/raspored :: objekt(${o})}"></div></th:block>
                         </th:block>
                     </div>
@@ -220,7 +330,7 @@
         <aside class="karta-stupac" aria-label="Karta okolice">
             <div id="karta" class="karta" role="region" aria-label="Karta s objektima u okolici adrese"></div>
             <div class="karta-slojevi" id="slojevi" aria-label="Slojevi karte"></div>
-            <p class="mala muted">Krug označava domet 15 minuta hoda za odabrani profil.</p>
+            <p class="mala muted" th:text="|Krug označava ${k.okolica.prag()} zračne udaljenosti – oko 15 minuta hoda za odabrani profil.|">Krug</p>
         </aside>
     </div>
 

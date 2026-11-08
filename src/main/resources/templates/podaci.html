@@ -56,8 +56,14 @@
                 učenja (LightGBM) treniranog na mjerenjima postaje i meteorološkim podacima Copernicus ERA5. Model se primjenjuje
                 na „tipičnu godinu” (prosječno vrijeme po danu u godini), a raspon prikazuje nesigurnost iz vremenske unakrsne
                 provjere. Model ne prognozira pojedini dan i ne zamjenjuje službena upozorenja.</p>
-            <p class="mala">Vrijeme hoda računa se iz zračne udaljenosti uz faktor zaobilaženja 1,3 i brzinu hoda prema profilu
-                (80 m/min općenito, 65 m/min umirovljenik, 55 m/min osoba s invaliditetom).</p>
+            <p class="mala">Udaljenosti prikazujemo u metrima kao <strong>zračnu udaljenost</strong> (ravna crta od adrese do
+                objekta). Za parkove, gradske vrtove i biciklističke staze mjerimo do ruba površine ili linije, a ne do središta.
+                Indeks grada 15 minuta zračnu udaljenost pretvara u vrijeme uz faktor zaobilaženja 1,3 i brzinu hoda prema
+                profilu (80 m/min općenito, 75 obitelj, 85 student, 65 umirovljenik, 55 osoba s invaliditetom) – za opći
+                profil to je prag od oko 920 m. Izračun po pješačkoj mreži (OpenStreetMap) predviđen je u sljedećoj fazi.</p>
+            <p class="mala">ZET-ov GTFS ne sadrži polja <code>wheelchair_boarding</code> i <code>wheelchair_accessible</code>,
+                pa pristupačnost stajališta prikazujemo kao „nema podatka”. Stanje pristupačnosti objekata dolazi iz oznake
+                <code>wheelchair</code> u OpenStreetMapu (četiri stanja: pristupačno, djelomično, nije, nema podatka).</p>
             <div th:each="m : ${modeli}" style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
                 <h3 th:text="|Model: ${m.postajaNaziv}|">Model</h3>
                 <p class="mala" th:if="${m.ogledni}"><span class="oznaka ogledno">Ogledni model</span> treniran na sintetičkim

@@ -59,9 +59,13 @@
 <!-- Jedan objekt u blizini adrese -->
 <div th:fragment="objekt(o)" class="stavka" th:classappend="${o.istaknut} ? 'istaknuto'">
     <div>
+        <span class="oznaka interes" th:if="${o.razlog != null}" th:text="${o.razlog}">Istaknuto jer ste označili: Menza</span>
+        <span class="pristup" th:if="${o.pristupacnost != null}"
+              th:classappend="${o.pristupacnost == 'pristupačno'} ? 'da' : (${o.pristupacnost == 'nije pristupačno'} ? 'ne' : (${o.pristupacnost == 'djelomično pristupačno'} ? 'djelomicno' : 'nema-podatka'))"
+              th:text="|♿ ${o.pristupacnost}|">♿ nema podatka</span>
         <div class="naslov" th:text="${o.naziv}">Naziv</div>
         <div class="meta">
-            <span th:text="|${o.udaljenostM} m · ${o.minutaHoda} min hoda|">260 m · 4 min hoda</span>
+            <span th:text="${o.udaljenost()}">260 m</span>
             <span th:if="${o.adresa != null}" th:text="| · ${o.adresa}|"></span>
         </div>
         <div class="meta" th:each="d : ${o.detalji}" th:text="${d}"></div>

@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 /**
  * Usporedba dviju adresa po istim kriterijima. Oznaka "Bliže / dostupnije" znači samo kraću
- * udaljenost ili veću dostupnost – ne ocjenjujemo naselje ni vrijednost nekretnine.
+ * (zračnu) udaljenost ili veću dostupnost – ne ocjenjujemo naselje ni vrijednost nekretnine.
  */
 @Service
 public class UsporedbaServis {
@@ -40,6 +40,8 @@ public class UsporedbaServis {
     static List<Redak> redovi(Karton a, Karton b) {
         List<Redak> r = new ArrayList<>();
         r.add(minute("Osnovna škola", a, b, k -> k.obrazovanje().skole().stream().findFirst()));
+        r.add(minute("Igralište", a, b, k -> k.javnePovrsine().igralista().stream().findFirst()));
+        r.add(minute("Park (do ruba)", a, b, k -> Optional.ofNullable(k.javnePovrsine().park())));
         r.add(minute("Dječji vrtić", a, b, k -> k.obrazovanje().vrtici().stream().findFirst()));
         r.add(veci("Linije javnog prijevoza u 600 m", a.prijevoz().brojLinija(), b.prijevoz().brojLinija(), ""));
         r.add(minute("Dom zdravlja ili ambulanta", a, b, k -> k.zdravlje().zdravstvo().stream().findFirst()));
@@ -55,15 +57,16 @@ public class UsporedbaServis {
         Optional<Karton.Objekt> oa = f.apply(a);
         Optional<Karton.Objekt> ob = f.apply(b);
         String bolje = null;
-        if (oa.isPresent() && ob.isPresent() && oa.get().minutaHoda() != ob.get().minutaHoda()) {
-            bolje = oa.get().minutaHoda() < ob.get().minutaHoda() ? "A" : "B";
+        // Razlika manja od 50 m nije značajna (zračna udaljenost, preciznost lokacije objekata).
+        if (oa.isPresent() && ob.isPresent() && Math.abs(oa.get().udaljenostM() - ob.get().udaljenostM()) >= 50) {
+            bolje = oa.get().udaljenostM() < ob.get().udaljenostM() ? "A" : "B";
         }
         return new Redak(kriterij, oa.map(UsporedbaServis::opis).orElse("nema podatka"),
                 ob.map(UsporedbaServis::opis).orElse("nema podatka"), bolje);
     }
 
     private static String opis(Karton.Objekt o) {
-        return o.udaljenostM() + " m · " + o.minutaHoda() + " min";
+        return o.udaljenost();
     }
 
     private static Redak veci(String kriterij, int a, int b, String jedinica) {

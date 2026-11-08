@@ -225,8 +225,8 @@ public class UvozServis {
             if (!vidjeno.add(kljuc)) {
                 continue; // duplikat unutar istog izvora
             }
-            objekti.add(new Poi(0, k.id(), k.kategorija(), zapis.naziv(), zapis.adresa(), zapis.lat(), zapis.lon(),
-                    zapis.atributi(), r.datumPodatka()));
+            objekti.add(new Poi(0, k.id(), k.kategorija(), PrepoznavanjePolja.uredniNaziv(zapis.naziv()), zapis.adresa(),
+                    zapis.lat(), zapis.lon(), zapis.atributi(), r.datumPodatka(), zapis.geometrija()));
         }
         int spremljeno = poi.zamijeni(k.id(), objekti);
         String poruka = String.format(Locale.ROOT, "pročitano %d, spremljeno %d, bez lokacije %d, geokodirano %d, "

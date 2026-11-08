@@ -1,11 +1,13 @@
 package hr.kartonadrese.core.geo;
 
+import java.util.Locale;
+
 /**
  * Osnovni geometrijski izračuni u WGS84 (EPSG:4326).
  *
- * <p>Udaljenost hoda procjenjuje se iz zračne udaljenosti uz faktor zaobilaženja 1,3
- * (tipično za gradsku uličnu mrežu). Kad je uključen OSRM (plan razvoja), koristi se
- * stvarna pješačka ruta.
+ * <p>Korisniku prikazujemo zračnu udaljenost u metrima ({@link #formatiraj(double)}).
+ * Indeks grada 15 minuta interno pretvara udaljenost u minute uz faktor zaobilaženja 1,3
+ * (tipično za gradsku uličnu mrežu); izračun po pješačkoj mreži je u planu razvoja.
  */
 public final class GeoUtil {
 
@@ -36,6 +38,18 @@ public final class GeoUtil {
     /** Najveća zračna udaljenost koju je moguće prehodati za zadane minute. */
     public static double dometM(int minuta, double brzinaMMin) {
         return minuta * brzinaMMin / FAKTOR_ZAOBILAZENJA;
+    }
+
+    /**
+     * Prikaz udaljenosti: do 1 km u metrima zaokruženo na 10 m ("260 m"), dalje u
+     * kilometrima s jednom decimalom ("1,2 km").
+     */
+    public static String formatiraj(double metara) {
+        long m = Math.round(Math.max(0, metara) / 10.0) * 10;
+        if (m < 1000) {
+            return m + " m";
+        }
+        return String.format(Locale.ROOT, "%.1f", metara / 1000).replace('.', ',') + " km";
     }
 
     /** Pravokutnik koji sigurno obuhvaća krug zadanog polumjera (za brzi SQL predfiltar). */

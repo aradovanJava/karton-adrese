@@ -10,7 +10,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/** Udaljenosti od točke do objekata i najbliži objekt po kategoriji. */
+/** Udaljenosti od točke do objekata (do ruba ako objekt ima geometriju) i najbliži objekt po kategoriji. */
 public final class Blizina {
 
     private Blizina() {
@@ -24,7 +24,7 @@ public final class Blizina {
                                                double najviseM) {
         List<PoiUdaljenost> r = new ArrayList<>();
         for (Poi p : objekti) {
-            double d = GeoUtil.udaljenostM(lat, lon, p.lat(), p.lon());
+            double d = p.udaljenostOdM(lat, lon);
             if (d <= najviseM) {
                 r.add(new PoiUdaljenost(p, d, GeoUtil.minutaHoda(d, brzinaHoda)));
             }

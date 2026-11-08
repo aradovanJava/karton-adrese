@@ -11,8 +11,11 @@ import hr.kartonadrese.baza.PrijavaRepozitorij;
 import hr.kartonadrese.baza.StajalisteRepozitorij;
 import hr.kartonadrese.config.KartonSvojstva;
 import hr.kartonadrese.core.json.Json;
+import hr.kartonadrese.core.model.Interes;
 import hr.kartonadrese.core.model.Kategorija;
 import hr.kartonadrese.core.model.Lokacija;
+import hr.kartonadrese.core.model.Postavke;
+import hr.kartonadrese.core.model.Potreba;
 import hr.kartonadrese.core.model.Profil;
 import hr.kartonadrese.ml.ModelZraka;
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,12 +79,17 @@ public class StraniceKontroler {
 
     @GetMapping("/karton")
     public String karton(@RequestParam(required = false) String adresa,
-                         @RequestParam(defaultValue = "opcenito") String profil, Model model) {
+                         @RequestParam(defaultValue = "opcenito") String profil,
+                         @RequestParam(required = false) String fakultet,
+                         @RequestParam(required = false) List<String> interes,
+                         @RequestParam(required = false) List<String> potreba, Model model) {
         Profil p = Profil.izTeksta(profil);
         if (adresa == null || adresa.isBlank()) {
             return "redirect:/";
         }
-        Optional<Karton> k = kartoni.karton(adresa, p);
+        // Interesi i potrebe dolaze kao više parametara (obrazac) ili popis odvojen zarezom (poveznica).
+        Postavke postavke = Postavke.iz(fakultet, interes, potreba);
+        Optional<Karton> k = kartoni.karton(adresa, p, postavke);
         if (k.isEmpty()) {
             model.addAttribute("aktivno", "pocetna");
             model.addAttribute("profili", Profil.values());
@@ -96,6 +104,10 @@ public class StraniceKontroler {
         model.addAttribute("aktivno", "karton");
         model.addAttribute("karton", k.get());
         model.addAttribute("profili", Profil.values());
+        model.addAttribute("postavke", postavke);
+        model.addAttribute("sviInteresi", Interes.values());
+        model.addAttribute("svePotrebe", Potreba.values());
+        model.addAttribute("visokaUcilista", p == Profil.STUDENT ? kartoni.visokaUcilista() : List.of());
         model.addAttribute("kartonJson", jsonZaKartu(k.get()));
         return "karton";
     }
@@ -212,7 +224,7 @@ public class StraniceKontroler {
             x.put("lat", o.lat());
             x.put("lon", o.lon());
             x.put("udaljenost", o.udaljenostM());
-            x.put("minuta", o.minutaHoda());
+            x.put("udaljenostTekst", o.udaljenost());
             x.put("izvor", o.izvor());
             objekti.add(x);
         }

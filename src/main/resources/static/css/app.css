@@ -225,3 +225,27 @@ dialog::backdrop { background: rgb(28 34 48 / .45); }
   table.kartice-mobilno td[data-oznaka]::before { content: attr(data-oznaka); display: block; font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* --- Interesi, potrebe, javne površine (v3) --- */
+.osobno { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px; margin: 0 0 16px; display: grid; gap: 12px; }
+.osobno-glava { display: grid; gap: 2px; }
+.osobno .polje { margin: 0; max-width: 560px; }
+.osobno .cipovi { margin: 0; }
+.osobno .cipovi legend { margin-bottom: 8px; }
+.gumb.malen { min-height: 36px; padding: 6px 14px; font-size: 14px; width: fit-content; }
+.napomena-udaljenost { margin: 0 0 12px; }
+.oznaka.interes { display: inline-flex; width: fit-content; padding: 3px 8px; border-radius: 999px; background: #EFEAFB; color: #4F359C; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.pristup { display: inline-flex; width: fit-content; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 4px; border: 1px solid transparent; }
+.pristup.da { background: #E6F4EC; color: var(--success); }
+.pristup.djelomicno { background: #FFF2D7; color: #754600; }
+.pristup.ne { background: #FDE8E6; color: var(--error); }
+.pristup.nema-podatka { background: #EEF1F5; color: #3F4858; border: 1px dashed #8A93A3; }
+.pristup-legenda { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.do-fakulteta { display: grid; gap: 6px; padding: 14px 16px; margin: 12px 0; border: 1px solid #D9D0F3; border-radius: var(--radius); background: #F7F4FE; }
+.do-fakulteta small { text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-size: 12px; font-weight: 700; }
+.do-fakulteta strong { font-size: 17px; }
+.do-fakulteta .linije { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.moj-indeks { list-style: none; padding: 0; margin: 8px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.moj-indeks li { display: grid; grid-template-columns: 20px 1fr; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); }
+.moj-indeks li small { grid-column: 2; font-size: 12px; }
+.moj-indeks li.dostupno { color: var(--success); background: #E6F4EC; border-color: #B8DDC9; }

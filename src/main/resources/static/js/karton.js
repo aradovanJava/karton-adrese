@@ -31,7 +31,7 @@
       }
       L.circleMarker([o.lat, o.lon], { radius: 7, color: '#FFFFFF', weight: 2, fillColor: o.boja, fillOpacity: 1 })
         .bindPopup('<strong>' + zastiti(o.naziv) + '</strong><br>' + zastiti(o.kategorijaNaziv) + '<br>' +
-          o.udaljenost + ' m · ' + o.minuta + ' min hoda<br><small>Izvor: ' + zastiti(o.izvor) + '</small>')
+          zastiti(o.udaljenostTekst) + ' (zračna udaljenost)<br><small>Izvor: ' + zastiti(o.izvor) + '</small>')
         .addTo(slojevi[o.kategorija]);
     });
 
@@ -85,6 +85,14 @@
         },
         scales: { y: { beginAtZero: true, title: { display: true, text: 'PM10 (µg/m³)' } } }
       }
+    });
+  }
+
+  // ---------------------------------------------------------------- interesi i potrebe (primjena odmah)
+  var osobno = document.querySelector('[data-osobno]');
+  if (osobno) {
+    Array.prototype.forEach.call(osobno.querySelectorAll('select, input[type="checkbox"]'), function (polje) {
+      polje.addEventListener('change', function () { osobno.submit(); });
     });
   }
 

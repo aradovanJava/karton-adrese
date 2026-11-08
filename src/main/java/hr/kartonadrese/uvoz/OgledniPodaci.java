@@ -9,6 +9,7 @@ import hr.kartonadrese.baza.PostajaZrakaRepozitorij;
 import hr.kartonadrese.baza.StajalisteRepozitorij;
 import hr.kartonadrese.config.KartonSvojstva;
 import hr.kartonadrese.core.geo.Laea3035;
+import hr.kartonadrese.core.geo.Geometrija;
 import hr.kartonadrese.core.json.Json;
 import hr.kartonadrese.core.model.Kategorija;
 import hr.kartonadrese.core.model.Lokacija;
@@ -98,7 +99,8 @@ public class OgledniPodaci implements ApplicationRunner {
             poIzvoru.computeIfAbsent(izvor, k -> new ArrayList<>()).add(new Poi(0, izvor,
                     Kategorija.izTeksta(Json.tekst(o, "kategorija").orElse(null)), Json.tekst(o, "naziv").orElse("?"),
                     Json.tekst(o, "adresa").orElse(null), Json.broj(o, "lat").orElseThrow(),
-                    Json.broj(o, "lon").orElseThrow(), atributi, Json.tekst(o, "datum").map(LocalDate::parse).orElse(null)));
+                    Json.broj(o, "lon").orElseThrow(), atributi, Json.tekst(o, "datum").map(LocalDate::parse).orElse(null),
+                    Geometrija.izJsona(Json.tekst(o, "geometrija").orElse(null))));
         }
         Map<String, Integer> brojPoIzvoru = new HashMap<>();
         poIzvoru.forEach((izvor, lista) -> brojPoIzvoru.put(izvor, poi.zamijeni(izvor, lista)));

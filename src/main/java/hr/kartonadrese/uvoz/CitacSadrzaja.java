@@ -22,7 +22,7 @@ final class CitacSadrzaja {
         String f = format == null ? "" : format.toUpperCase(Locale.ROOT);
         PrepoznavanjePolja.Rezultat r;
         if (f.contains("JSON") || pocinjeVitickom(podaci)) {
-            r = GeoJsonCitac.procitaj(new String(podaci, StandardCharsets.UTF_8));
+            r = GeoJsonCitac.procitaj(new String(podaci, StandardCharsets.UTF_8), k.stupacNaziv());
         } else {
             Tablica t = tablica(podaci, f);
             r = PrepoznavanjePolja.izTablice(t, new PrepoznavanjePolja.Mapiranje(k.stupacNaziv(), k.stupacAdresa(),

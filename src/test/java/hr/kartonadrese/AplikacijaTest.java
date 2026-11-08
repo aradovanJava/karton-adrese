@@ -53,11 +53,52 @@ class AplikacijaTest {
                 .andExpect(jsonPath("$.gradskaCetvrt").value("Maksimir"))
                 .andExpect(jsonPath("$.profil").value("OBITELJ"))
                 .andExpect(jsonPath("$.obrazovanje.skole[0].naziv").value("Osnovna škola Vladimira Nazora"))
-                .andExpect(jsonPath("$.obrazovanje.skole[0].izvor").value("Ogledni podaci"))
+                .andExpect(jsonPath("$.obrazovanje.skole[0].izvor").value("Grad Zagreb"))
+                .andExpect(jsonPath("$.obrazovanje.skole[0].udaljenostM").value(260))
+                .andExpect(jsonPath("$.javnePovrsine.igralista.length()").value(greaterThan(0)))
+                .andExpect(jsonPath("$.mojIndeks.stavke.length()").value(greaterThan(2)))
                 .andExpect(jsonPath("$.prijevoz.stajalista.length()").value(greaterThan(0)))
                 .andExpect(jsonPath("$.okolica.najvise").value(6))
                 .andExpect(jsonPath("$.zrak.procjena.length()").value(12))
                 .andExpect(jsonPath("$.sazetak.length()").value(greaterThan(0)));
+    }
+
+    @Test
+    void studentskiInteresiIFakultet() throws Exception {
+        String popis = mvc.perform(get("/api/visoka-ucilista")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("\\{\"id\":(\\d+),\"naziv\":\"Ekonomski fakultet\"").matcher(popis);
+        org.junit.jupiter.api.Assertions.assertTrue(m.find(), "Ekonomski fakultet je u popisu visokih učilišta");
+        String id = m.group(1);
+        mvc.perform(get("/api/karton").param("adresa", ADRESA).param("profil", "student")
+                        .param("interes", "menza").param("fakultet", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.student.stavke[0].kategorija").value("MENZA"))
+                .andExpect(jsonPath("$.student.stavke[0].razlog").value(containsString("Menza")))
+                .andExpect(jsonPath("$.student.fakultet.naziv").value("Ekonomski fakultet"))
+                .andExpect(jsonPath("$.student.fakultet.udaljenostM").value(greaterThan(500)))
+                .andExpect(jsonPath("$.redoslijed[0]").value("STUDENT"));
+        mvc.perform(get("/karton").param("adresa", ADRESA).param("profil", "student").param("interes", "bicikl"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Studentski život")))
+                .andExpect(content().string(containsString("Istaknuto jer ste označili: Bicikl")))
+                .andExpect(content().string(containsString("Fakultet ili visoko učilište")));
+    }
+
+    @Test
+    void prikazUMetrimaJavnePovrsineIPristupacnost() throws Exception {
+        mvc.perform(get("/karton").param("adresa", ADRESA).param("profil", "obitelj"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("260 m")))
+                .andExpect(content().string(containsString("zračne")))
+                .andExpect(content().string(containsString("Javne površine i igra")))
+                .andExpect(content().string(containsString("Moj indeks")));
+        mvc.perform(get("/karton").param("adresa", ADRESA).param("profil", "osi").param("potreba", "kolica"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Pristupačnost stajališta i vozila")))
+                .andExpect(content().string(containsString("nema podatka")))
+                .andExpect(content().string(containsString("Krećem se u kolicima")));
     }
 
     @Test
@@ -78,7 +119,8 @@ class AplikacijaTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/usporedba").param("a", ADRESA).param("b", "Ilica 1"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Bliže / dostupnije")));
+                .andExpect(content().string(containsString("Bliže / dostupnije")))
+                .andExpect(content().string(containsString("Igralište")));
     }
 
     @Test

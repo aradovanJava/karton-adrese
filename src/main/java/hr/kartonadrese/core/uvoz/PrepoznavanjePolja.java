@@ -260,4 +260,57 @@ public final class PrepoznavanjePolja {
         String v = svojstva.get(kljucevi.get(i));
         return v == null || v.isBlank() ? null : v.trim();
     }
+
+    private static final java.util.Set<String> MALE_RIJECI = java.util.Set.of("i", "u", "na", "za", "s", "sa", "od",
+            "do", "iz", "pri", "kod", "nad", "pod", "o", "te", "ili", "bb");
+    private static final List<String> OPCI_POCECI = List.of("osnovna glazbena škola", "osnovna škola",
+            "glazbena škola", "centar za odgoj i obrazovanje", "poliklinika za rehabilitaciju", "dječji vrtić");
+
+    /**
+     * Naziv napisan samo velikim slovima ("OSNOVNA ŠKOLA AUGUSTA HARAMBAŠIĆA") pretvara u
+     * uobičajeni pravopis ("Osnovna škola Augusta Harambašića"). Ostale nazive ne mijenja.
+     */
+    public static String uredniNaziv(String naziv) {
+        if (naziv == null) {
+            return null;
+        }
+        String t = naziv.trim().replaceAll("\\s+", " ");
+        long slova = t.chars().filter(Character::isLetter).count();
+        long velika = t.chars().filter(Character::isUpperCase).count();
+        if (slova < 4 || velika < slova * 0.9) {
+            return t;
+        }
+        Locale hr = Locale.forLanguageTag("hr");
+        String mala = t.toLowerCase(hr);
+        StringBuilder sb = new StringBuilder();
+        String ostatak = mala;
+        for (String pocetak : OPCI_POCECI) {
+            if (mala.startsWith(pocetak)) {
+                sb.append(Character.toUpperCase(pocetak.charAt(0))).append(pocetak.substring(1));
+                ostatak = mala.substring(pocetak.length());
+                break;
+            }
+        }
+        for (String r : ostatak.trim().split(" ")) {
+            if (r.isEmpty()) {
+                continue;
+            }
+            boolean prva = sb.isEmpty();
+            if (!prva) {
+                sb.append(' ');
+            }
+            sb.append(!prva && MALE_RIJECI.contains(r) ? r : velikoPocetno(r));
+        }
+        return sb.toString().trim();
+    }
+
+    private static String velikoPocetno(String rijec) {
+        StringBuilder sb = new StringBuilder(rijec.length());
+        boolean sljedeceVeliko = true;
+        for (char c : rijec.toCharArray()) {
+            sb.append(sljedeceVeliko ? Character.toUpperCase(c) : c);
+            sljedeceVeliko = !Character.isLetterOrDigit(c) && c != '\'';
+        }
+        return sb.toString();
+    }
 }
