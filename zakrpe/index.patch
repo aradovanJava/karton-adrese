@@ -1,0 +1,141 @@
+@@@ append src/index.css
+---with
+
+/* --- v3: metri, interesi, potrebe i javne površine --- */
+.layers .layer-public {
+  order: 6;
+}
+.layers .layer-student {
+  order: 0;
+}
+.profile-family .layer-public {
+  order: 1;
+}
+.profile-student .layer-student {
+  order: -1;
+}
+.personal-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: white;
+  display: grid;
+  gap: 12px;
+}
+.personal-head {
+  display: grid;
+  gap: 2px;
+}
+.personal-head small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.faculty-field select {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 12px;
+  font: inherit;
+  background: white;
+  max-width: 100%;
+}
+.distance-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+.badge-interest {
+  background: var(--ai-soft);
+  color: #4f359c;
+}
+.data-item > div > .badge,
+.data-item > div > .access-state {
+  display: flex;
+  width: fit-content;
+  margin-bottom: 6px;
+}
+.data-item-muted strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+.faculty-route {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  margin-top: 16px;
+  border: 1px solid #d9d0f3;
+  border-radius: var(--radius);
+  background: #f7f4fe;
+}
+.faculty-route small {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.faculty-route strong {
+  display: block;
+  font-size: 17px;
+}
+.faculty-route span {
+  font-size: 14px;
+}
+.faculty-empty {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+}
+.route-lines {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.access-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.access-da {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.access-partial {
+  background: #fff2d7;
+  color: #754600;
+}
+.access-ne {
+  background: #fde8e6;
+  color: #b42318;
+}
+.access-unknown {
+  background: #eef1f5;
+  color: #3f4858;
+  border: 1px dashed #8a93a3;
+}
+.access-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+}
+.personal-index-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.legend-dot.public {
+  background: #3a7d44;
+}
+.legend-dot.student {
+  background: #6a4bc4;
+}

@@ -1,0 +1,793 @@
+@@@ insertBefore src/App.tsx
+---at
+} from "lucide-react";
+---with
+  TramFront,
+  Trees,
+@@@ replace src/App.tsx
+---find
+import { exampleAddresses, profiles, type Karton, type Profile } from "./data/mockData";
+---with
+import {
+  exampleAddresses,
+  faculties,
+  interestOptions,
+  needOptions,
+  profiles,
+  THRESHOLD_15_MIN_M,
+  type AccessState,
+  type Interest,
+  type Karton,
+  type Need,
+  type Place,
+  type Profile,
+} from "./data/mockData";
+@@@ insertAfter src/App.tsx
+---at
+const sourceDate = "Grad Zagreb · 12. 10. 2026.";
+---with
+
+/** Udaljenosti prikazujemo u metrima (zračna udaljenost od adrese do objekta). */
+const formatDistance = (meters: number) =>
+  meters < 1000
+    ? `${Math.round(meters / 10) * 10} m`
+    : `${(meters / 1000).toLocaleString("hr-HR", { maximumFractionDigits: 1 })} km`;
+
+const haversine = (a: [number, number], b: [number, number]) => {
+  const rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLon = (b[1] - a[1]) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371008.8 * Math.asin(Math.sqrt(h));
+};
+
+const accessLabel: Record<AccessState, string> = {
+  da: "pristupačno",
+  djelomično: "djelomično pristupačno",
+  ne: "nije pristupačno",
+  "nema podatka": "nema podatka",
+};
+@@@ replace src/App.tsx
+---find
+  type?: "source" | "estimate" | "ai" | "live";
+---with
+  type?: "source" | "estimate" | "ai" | "live" | "interest";
+@@@ replace src/App.tsx
+---find
+  openAddress: (address: string) => void;
+  navigate: (page: Page) => void;
+---with
+  openAddress: (address: string, profile?: Profile) => void;
+  navigate: (page: Page) => void;
+@@@ replace src/App.tsx
+---find
+<AddressSearch value={address} onChange={setAddress} onSelect={openAddress} />
+---with
+<AddressSearch
+                value={address}
+                onChange={setAddress}
+                onSelect={(item) => openAddress(item, profile)}
+              />
+@@@ replace src/App.tsx
+---find
+onClick={() => openAddress(address)}
+---with
+onClick={() => openAddress(address, profile)}
+@@@ replace src/App.tsx
+---find
+onClick={() => openAddress(item)}
+---with
+onClick={() => openAddress(item, profile)}
+@@@ replace src/App.tsx
+---find
+<b>4 min hoda</b>
+---with
+<b>260 m</b>
+@@@ replace src/App.tsx
+---find
+<b>3 min hoda</b>
+---with
+<b>230 m</b>
+@@@ replace src/App.tsx
+---find
+"Udaljenosti, minute hoda, izvori i datumi na jednom mjestu."
+---with
+"Udaljenosti u metrima, izvori i datumi na jednom mjestu."
+@@@ replace src/App.tsx
+---find
+useState({ education: true, transit: true, health: true });
+---with
+useState({
+    education: true,
+    transit: true,
+    health: true,
+    public: true,
+    student: true,
+  });
+@@@ insertAfter src/App.tsx
+---at
+{ key: "health", label: "Zdravlje", offset: [0.003, 0.003], color: "#1F7A4D" },
+---with
+    { key: "public", label: "Javne površine", offset: [-0.003, -0.003], color: "#3A7D44" },
+    { key: "student", label: "Studenti", offset: [0.0015, 0.0045], color: "#6A4BC4" },
+@@@ replaceLines src/App.tsx
+---from
+function DataItem({
+---to
+function LayerCard({
+---with
+function DataItem({
+  name,
+  detail,
+  source,
+  onReport,
+  badge,
+  muted = false,
+}: {
+  name: string;
+  detail: string;
+  source?: string;
+  onReport: (object: string, source: string) => void;
+  badge?: ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <div className={cx("data-item", muted && "data-item-muted")}>
+      <div>
+        {badge}
+        <strong>{name}</strong>
+        <p>{detail}</p>
+      </div>
+      <div className="item-meta">
+        <SourceBadge value={source} />
+        <button
+          className="text-link"
+          type="button"
+          onClick={() => onReport(name, source || sourceDate)}
+        >
+          Prijavi pogrešku
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LayerCard({
+@@@ insertBefore src/App.tsx
+---at
+function AddressCardPage({
+---with
+function AccessBadge({ state }: { state?: AccessState }) {
+  if (!state) return null;
+  const variant =
+    state === "nema podatka" ? "unknown" : state === "djelomično" ? "partial" : state;
+  return (
+    <span className={cx("access-state", `access-${variant}`)}>
+      <Accessibility size={13} aria-hidden="true" />
+      {accessLabel[state]}
+    </span>
+  );
+}
+
+function PersonalPanel({
+  profile,
+  faculty,
+  onFaculty,
+  interests,
+  onInterest,
+  needs,
+  onNeed,
+}: {
+  profile: Profile;
+  faculty: string;
+  onFaculty: (id: string) => void;
+  interests: Interest[];
+  onInterest: (value: Interest) => void;
+  needs: Need[];
+  onNeed: (value: Need) => void;
+}) {
+  if (profile !== "Student" && profile !== "Osoba s invaliditetom") return null;
+  const student = profile === "Student";
+  const options: string[] = student ? interestOptions : needOptions;
+  return (
+    <section className="personal-panel" aria-label={student ? "Vaši interesi" : "Vaše potrebe"}>
+      <div className="personal-head">
+        <strong>
+          {student ? "Prilagodite karton svojim interesima" : "Prilagodite karton svojim potrebama"}
+        </strong>
+        <small>Odabir ostaje samo u poveznici ove stranice — ništa ne spremamo.</small>
+      </div>
+      {student && (
+        <label className="form-field faculty-field">
+          Fakultet ili visoko učilište
+          <select value={faculty} onChange={(event) => onFaculty(event.target.value)}>
+            <option value="">— odaberite —</option>
+            {faculties.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} ({item.address})
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <div className="chip-list" role="group" aria-label={student ? "Interesi" : "Potrebe"}>
+        {options.map((option) => {
+          const active = student
+            ? interests.includes(option as Interest)
+            : needs.includes(option as Need);
+          return (
+            <button
+              key={option}
+              type="button"
+              className={cx("chip", active && "chip-active")}
+              aria-pressed={active}
+              onClick={() => (student ? onInterest(option as Interest) : onNeed(option as Need))}
+            >
+              {active && <Check size={15} aria-hidden="true" />}
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function FacultyRoute({ data, facultyId }: { data: Karton; facultyId: string }) {
+  const faculty = faculties.find((item) => item.id === facultyId);
+  if (!faculty) {
+    return (
+      <p className="faculty-route faculty-empty">
+        <GraduationCap size={18} aria-hidden="true" /> Odaberite fakultet iznad kako bismo prikazali
+        udaljenost i izravne linije ZET-a.
+      </p>
+    );
+  }
+  const distance = haversine(data.coordinates, faculty.coordinates);
+  const direct = data.transit.lines.filter((line) => faculty.lines.includes(line));
+  return (
+    <div className="faculty-route">
+      <div>
+        <small>Do mog fakulteta</small>
+        <strong>{faculty.name}</strong>
+        <span>
+          {faculty.address} · {formatDistance(distance)} zračne udaljenosti
+        </span>
+      </div>
+      <div className="route-lines">
+        <TramFront size={18} aria-hidden="true" />
+        {direct.length ? (
+          <span>
+            ZET bez presjedanja: <b>{direct.join(", ")}</b>
+          </span>
+        ) : (
+          <span>Nema izravne linije ZET-a — potrebno je presjedanje.</span>
+        )}
+      </div>
+      <SourceBadge value="Geoportal visokoškolske ustanove · ZET GTFS" />
+    </div>
+  );
+}
+
+function StudentItems({
+  data,
+  interests,
+  onReport,
+}: {
+  data: Karton;
+  interests: Interest[];
+  onReport: (object: string, source: string) => void;
+}) {
+  const items: Array<{ interest: Interest | null; place: Place; detail: string }> = [
+    { interest: "Menza", place: data.student.menza, detail: "studentski restoran" },
+    { interest: "Knjižnica", place: data.student.library, detail: "narodna knjižnica" },
+    { interest: "Bicikl", place: data.student.bikeLane, detail: "najbliža biciklistička staza" },
+    {
+      interest: "Bicikl",
+      place: data.student.publicBike,
+      detail: `javni bicikli · ${data.student.publicBike.racks} stalaka`,
+    },
+    { interest: "Sport", place: data.student.sport, detail: "sportski objekt" },
+    { interest: null, place: data.student.housing, detail: "studentsko naselje" },
+  ];
+  const picked = (item: (typeof items)[number]) =>
+    Boolean(item.interest && interests.includes(item.interest));
+  const ordered = [...items].sort((a, b) => Number(picked(b)) - Number(picked(a)));
+  return (
+    <>
+      {ordered.map((item) => (
+        <DataItem
+          key={item.place.name + item.detail}
+          name={item.place.name}
+          detail={`${formatDistance(item.place.distanceM)} · ${item.detail}`}
+          source={item.place.source}
+          onReport={onReport}
+          muted={interests.length > 0 && !picked(item)}
+          badge={
+            picked(item) ? (
+              <Badge type="interest">Istaknuto jer ste označili: {item.interest}</Badge>
+            ) : undefined
+          }
+        />
+      ))}
+    </>
+  );
+}
+
+function PersonalIndex({
+  data,
+  profile,
+  facultyId,
+}: {
+  data: Karton;
+  profile: Profile;
+  facultyId: string;
+}) {
+  const faculty = faculties.find((item) => item.id === facultyId);
+  const rows: Array<{ name: string; distanceM: number }> =
+    profile === "Obitelj s djecom"
+      ? [
+          { name: "Dječje igralište", distanceM: data.publicSpaces.playground.distanceM },
+          {
+            name: "Park",
+            distanceM: data.publicSpaces.park.inside ? 0 : data.publicSpaces.park.distanceM,
+          },
+          { name: "Sportski objekt", distanceM: data.publicSpaces.sport.distanceM },
+        ]
+      : profile === "Student"
+        ? [
+            { name: "Menza", distanceM: data.student.menza.distanceM },
+            { name: "Knjižnica", distanceM: data.student.library.distanceM },
+            { name: "Biciklistička staza", distanceM: data.student.bikeLane.distanceM },
+            ...(faculty
+              ? [{ name: "Fakultet", distanceM: haversine(data.coordinates, faculty.coordinates) }]
+              : []),
+          ]
+        : [];
+  if (!rows.length) return null;
+  return (
+    <>
+      <p className="personal-index-title">Moj indeks · {profile}</p>
+      <div className="check-grid">
+        {rows.map((item) => {
+          const ok = item.distanceM <= THRESHOLD_15_MIN_M;
+          return (
+            <span className={ok ? "available" : ""} key={item.name}>
+              {ok ? <CheckCircle2 /> : <X />}
+              {item.name}
+              <small>{formatDistance(item.distanceM)}</small>
+            </span>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+@@@ replace src/App.tsx
+---find
+  const [profile, setProfile] = useState<Profile>("Općenito");
+  const [data, setData] = useState<Karton | null>(null);
+---with
+  const [profile, setProfile] = useState<Profile>(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("profil");
+    return profiles.find((item) => item === fromUrl) ?? "Općenito";
+  });
+  const [data, setData] = useState<Karton | null>(null);
+  const initialParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [faculty, setFaculty] = useState(initialParams.get("fakultet") || "");
+  const [interests, setInterests] = useState<Interest[]>(
+    (initialParams.get("interesi") || "")
+      .split(",")
+      .filter((item): item is Interest => interestOptions.includes(item as Interest)),
+  );
+  const [needs, setNeeds] = useState<Need[]>(
+    (initialParams.get("potrebe") || "")
+      .split(",")
+      .filter((item): item is Need => needOptions.includes(item as Need)),
+  );
+  const toggle = <T,>(list: T[], value: T) =>
+    list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+  // Stanje prikaza čuvamo u poveznici (URL), ne na poslužitelju.
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search);
+    const set = (key: string, value: string) => (value ? next.set(key, value) : next.delete(key));
+    set("profil", profile === "Općenito" ? "" : profile);
+    set("fakultet", profile === "Student" ? faculty : "");
+    set("interesi", profile === "Student" ? interests.join(",") : "");
+    set("potrebe", profile === "Osoba s invaliditetom" ? needs.join(",") : "");
+    window.history.replaceState({}, "", `?${next.toString()}${window.location.hash}`);
+  }, [profile, faculty, interests, needs]);
+@@@ insertBefore src/App.tsx
+---at
+<div className="content-map-grid">
+---with
+      <PersonalPanel
+        profile={profile}
+        faculty={faculty}
+        onFaculty={setFaculty}
+        interests={interests}
+        onInterest={(value) => setInterests(toggle(interests, value))}
+        needs={needs}
+        onNeed={(value) => setNeeds(toggle(needs, value))}
+      />
+@@@ replace src/App.tsx
+---find
+<Metric icon={GraduationCap} label="Najbliža škola" value="260 m · 4 min" />
+---with
+<Metric
+                icon={GraduationCap}
+                label="Najbliža škola"
+                value={formatDistance(data.school.distanceM)}
+              />
+@@@ insertBefore src/App.tsx
+---at
+<section className="know-box">
+---with
+            <p className="distance-note">
+              <Info size={15} aria-hidden="true" /> Udaljenosti su zračne (ravna crta od adrese do
+              objekta) i prikazane su u metrima.
+            </p>
+@@@ replace src/App.tsx
+---find
+subtitle="Škola 4 min · vrtić 3 min"
+---with
+subtitle={`Škola ${formatDistance(data.school.distanceM)} · vrtić ${formatDistance(data.kindergarten.distanceM)}`}
+@@@ replaceLines src/App.tsx
+---from
+${data.school.distanceM} m · ${data.school.walkingMinutes} min hoda
+---to
+${data.school.distanceM} m · ${data.school.walkingMinutes} min hoda
+---with
+                detail={`${formatDistance(data.school.distanceM)} · ${data.school.shifts === 1 ? "jedna smjena" : `${data.school.shifts} smjene`} · produženi boravak: ${data.school.afterSchoolCare ? "da" : "ne"} · sportska dvorana: ${data.school.sportsHall ? "da" : "ne"} · ${data.school.pupils} učenika`}
+                badge={
+                  profile === "Osoba s invaliditetom" ? (
+                    <AccessBadge state={data.school.wheelchair} />
+                  ) : undefined
+                }
+@@@ replaceLines src/App.tsx
+---from
+${data.kindergarten.distanceM} m · ${data.kindergarten.walkingMinutes} min hoda
+---to
+${data.kindergarten.distanceM} m · ${data.kindergarten.walkingMinutes} min hoda
+---with
+                detail={`${formatDistance(data.kindergarten.distanceM)} · slobodna mjesta: ${data.kindergarten.freePlaces ? "da" : "ne"} · upisno područje: ${data.kindergarten.inEnrolmentArea ? "da" : "ne"}`}
+@@@ replace src/App.tsx
+---find
+subtitle={`${data.transit.distanceM} m · linije ${data.transit.lines.join(", ")}`}
+---with
+subtitle={`${formatDistance(data.transit.distanceM)} · linije ${data.transit.lines.join(", ")}`}
+@@@ replaceLines src/App.tsx
+---from
+${data.transit.distanceM} m · ${data.transit.walkingMinutes} min hoda · smjer
+---to
+${data.transit.distanceM} m · ${data.transit.walkingMinutes} min hoda · smjer
+---with
+                detail={`${formatDistance(data.transit.distanceM)} · smjer ${data.transit.direction}${profile === "Osoba s invaliditetom" ? " · pristupačnost: ZET ne objavljuje podatak" : ""}`}
+@@@ replaceLines src/App.tsx
+---from
+${data.healthCentre.distanceM} m · ${data.healthCentre.walkingMinutes} min hoda
+---to
+${data.healthCentre.distanceM} m · ${data.healthCentre.walkingMinutes} min hoda
+---with
+                detail={formatDistance(data.healthCentre.distanceM)}
+                badge={
+                  profile === "Osoba s invaliditetom" ? (
+                    <AccessBadge state={data.healthCentre.wheelchair ?? "nema podatka"} />
+                  ) : undefined
+                }
+@@@ replaceLines src/App.tsx
+---from
+${data.pharmacy.distanceM} m · ${data.pharmacy.walkingMinutes} min hoda
+---to
+${data.pharmacy.distanceM} m · ${data.pharmacy.walkingMinutes} min hoda
+---with
+                detail={formatDistance(data.pharmacy.distanceM)}
+                badge={
+                  profile === "Osoba s invaliditetom" ? (
+                    <AccessBadge state={data.pharmacy.wheelchair ?? "nema podatka"} />
+                  ) : undefined
+                }
+@@@ replace src/App.tsx
+---find
+detail={`${data.airStation.distanceM} m · godišnji PM10
+---with
+detail={`${formatDistance(data.airStation.distanceM)} · godišnji PM10
+@@@ replaceLines src/App.tsx
+---from
+subtitle={`${data.accessibility.accessibleStops} pristupačna stajališta`}
+---to
+</LayerCard>
+---with
+              subtitle={`${data.accessibility.facilities.length} ustanove · pješačka zona ${formatDistance(data.accessibility.pedestrianZone.distanceM)}`}
+            >
+              {data.accessibility.facilities.map((facility) => (
+                <DataItem
+                  key={facility.name}
+                  name={facility.name}
+                  detail={`${formatDistance(facility.distanceM)} · ${facility.detail ?? "ustanova za osobe s invaliditetom"}`}
+                  source={facility.source}
+                  onReport={reportItem}
+                />
+              ))}
+              <DataItem
+                name="Pješačka zona (bez automobila)"
+                detail={`${data.accessibility.pedestrianZone.distanceM === 0 ? "Adresa je u pješačkoj zoni" : formatDistance(data.accessibility.pedestrianZone.distanceM)} · zona bez prometa automobila; kaldrma i nagibi mogu otežati kretanje kolicima`}
+                source={data.accessibility.pedestrianZone.source}
+                onReport={reportItem}
+              />
+              <DataItem
+                name="Pristupačnost stajališta i vozila"
+                badge={<AccessBadge state={data.accessibility.stopAccess} />}
+                detail="ZET u GTFS-u ne objavljuje polja wheelchair_boarding i wheelchair_accessible, pa pristupačnost stajališta ne možemo potvrditi."
+                source="ZET GTFS · provjereno 8. 11. 2026."
+                onReport={reportItem}
+              />
+              <div className="access-legend" aria-label="Oznake pristupačnosti">
+                {(["da", "djelomično", "ne", "nema podatka"] as AccessState[]).map((state) => (
+                  <AccessBadge key={state} state={state} />
+                ))}
+              </div>
+              {needs.length > 0 && profile === "Osoba s invaliditetom" && (
+                <p className="help-text">
+                  <Info size={15} /> Prikaz je prilagođen: {needs.join(", ").toLowerCase()}. Rute bez
+                  stepenica i strmih nagiba planirane su uz izračun po pješačkoj mreži.
+                </p>
+              )}
+            </LayerCard>
+            <LayerCard
+              className="layer-public"
+              icon={Trees}
+              title="Javne površine i igra"
+              subtitle={`Igralište ${formatDistance(data.publicSpaces.playground.distanceM)} · park ${data.publicSpaces.park.inside ? "– adresa je u parku" : formatDistance(data.publicSpaces.park.distanceM)}`}
+              initial={profile === "Obitelj s djecom"}
+            >
+              <DataItem
+                name={data.publicSpaces.playground.name}
+                detail={`${formatDistance(data.publicSpaces.playground.distanceM)} · ${data.publicSpaces.playground.kind}`}
+                source={data.publicSpaces.playground.source}
+                onReport={reportItem}
+                badge={
+                  profile === "Obitelj s djecom" ? (
+                    <Badge type="interest">Važno za obitelji s djecom</Badge>
+                  ) : undefined
+                }
+              />
+              <DataItem
+                name={data.publicSpaces.park.name}
+                detail={
+                  data.publicSpaces.park.inside
+                    ? "Adresa je unutar parka"
+                    : `${formatDistance(data.publicSpaces.park.distanceM)} do ruba parka`
+                }
+                source={data.publicSpaces.park.source}
+                onReport={reportItem}
+              />
+              <DataItem
+                name={data.publicSpaces.sport.name}
+                detail={`${formatDistance(data.publicSpaces.sport.distanceM)} · ${data.publicSpaces.sport.kind}`}
+                source={data.publicSpaces.sport.source}
+                onReport={reportItem}
+              />
+              <DataItem
+                name={`Odmorko – ${data.publicSpaces.odmorko.name}`}
+                detail={`${formatDistance(data.publicSpaces.odmorko.distanceM)} · besplatno za učenike · ${data.publicSpaces.odmorko.activity} · školska godina ${data.publicSpaces.odmorko.schoolYear}`}
+                source={data.publicSpaces.odmorko.source}
+                onReport={reportItem}
+              />
+              <DataItem
+                name={data.publicSpaces.cityGarden.name}
+                detail={`${formatDistance(data.publicSpaces.cityGarden.distanceM)} · ${data.publicSpaces.cityGarden.plots} vrtnih parcela za građane`}
+                source={data.publicSpaces.cityGarden.source}
+                onReport={reportItem}
+              />
+            </LayerCard>
+            {profile === "Student" && (
+              <LayerCard
+                className="layer-student"
+                icon={GraduationCap}
+                title="Studentski život"
+                subtitle={`Menza ${formatDistance(data.student.menza.distanceM)} · knjižnica ${formatDistance(data.student.library.distanceM)}`}
+                initial
+              >
+                <FacultyRoute data={data} facultyId={faculty} />
+                <StudentItems data={data} interests={interests} onReport={reportItem} />
+              </LayerCard>
+            )}
+@@@ replace src/App.tsx
+---find
+subtitle={`${data.earthquakeAssembly.walkingMinutes} min do mjesta okupljanja`}
+---with
+subtitle={`${formatDistance(data.earthquakeAssembly.distanceM)} do mjesta okupljanja`}
+@@@ replace src/App.tsx
+---find
+detail={`${data.earthquakeAssembly.distanceM} m · ${data.earthquakeAssembly.walkingMinutes} min hoda · područje evakuacije`}
+---with
+detail={`${formatDistance(data.earthquakeAssembly.distanceM)} · područje evakuacije`}
+@@@ replaceLines src/App.tsx
+---from
+<small>{item.available ? "Unutar 15 min" : "Izvan 15 min"}</small>
+---to
+<SourceBadge />
+---with
+                    <small>
+                      {item.available
+                        ? `do ${THRESHOLD_15_MIN_M} m`
+                        : `dalje od ${THRESHOLD_15_MIN_M} m`}
+                    </small>
+                  </span>
+                ))}
+              </div>
+              <PersonalIndex data={data} profile={profile} facultyId={faculty} />
+              <p className="help-text">
+                <Info size={15} /> Prag od {THRESHOLD_15_MIN_M} m zračne udaljenosti odgovara oko
+                15 minuta hoda (80 m/min, faktor zaobilaženja 1,3).
+              </p>
+              <div className="item-meta">
+                <SourceBadge />
+@@@ replace src/App.tsx
+---find
+`${result[0].school.distanceM} m · ${result[0].school.walkingMinutes} min`,
+---with
+formatDistance(result[0].school.distanceM),
+@@@ replace src/App.tsx
+---find
+`${result[1].school.distanceM} m · ${result[1].school.walkingMinutes} min`,
+---with
+formatDistance(result[1].school.distanceM),
+@@@ replace src/App.tsx
+---find
+`${result[0].kindergarten.distanceM} m · ${result[0].kindergarten.walkingMinutes} min`,
+---with
+formatDistance(result[0].kindergarten.distanceM),
+@@@ replace src/App.tsx
+---find
+`${result[1].kindergarten.distanceM} m · ${result[1].kindergarten.walkingMinutes} min`,
+---with
+formatDistance(result[1].kindergarten.distanceM),
+@@@ replace src/App.tsx
+---find
+`${result[0].healthCentre.walkingMinutes} min hoda`,
+---with
+formatDistance(result[0].healthCentre.distanceM),
+@@@ replace src/App.tsx
+---find
+`${result[1].healthCentre.walkingMinutes} min hoda`,
+---with
+formatDistance(result[1].healthCentre.distanceM),
+@@@ replace src/App.tsx
+---find
+result[0].healthCentre.walkingMinutes < result[1].healthCentre.walkingMinutes ? 1 : 2,
+---with
+result[0].healthCentre.distanceM < result[1].healthCentre.distanceM ? 1 : 2,
+              ],
+              [
+                "Dječje igralište",
+                formatDistance(result[0].publicSpaces.playground.distanceM),
+                formatDistance(result[1].publicSpaces.playground.distanceM),
+                result[0].publicSpaces.playground.distanceM <
+                result[1].publicSpaces.playground.distanceM
+                  ? 1
+                  : 2,
+              ],
+              [
+                "Park",
+                formatDistance(result[0].publicSpaces.park.distanceM),
+                formatDistance(result[1].publicSpaces.park.distanceM),
+                result[0].publicSpaces.park.distanceM < result[1].publicSpaces.park.distanceM
+                  ? 1
+                  : 2,
+@@@ replace src/App.tsx
+---find
+"Broj vrsta usluga dostupnih unutar 15 minuta hoda."
+---with
+"Broj vrsta usluga u krugu od 920 m zračne udaljenosti (oko 15 minuta hoda)."
+@@@ insertAfter src/App.tsx
+---at
+["OpenStreetMap", "Suradnici OSM-a", "ODbL", "kontinuirano", "openstreetmap.org"],
+---with
+  [
+    "Geoportal visokoškolske ustanove",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "9. 12. 2022.",
+    "data.zagreb.hr/dataset/geoportal-visokoskolske-ustanove",
+  ],
+  [
+    "Geoportal Studentski restoran · Studentsko naselje",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "28. 10. 2026.",
+    "data.zagreb.hr/dataset/geoportal-studentski-restoran",
+  ],
+  [
+    "Geoportal biciklističke staze · Sustav javnih bicikala",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "23. 6. 2022.",
+    "data.zagreb.hr/dataset/geoportal-biciklisticke-staze",
+  ],
+  [
+    "Geoportal javna sportska igrališta",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "25. 9. 2023.",
+    "data.zagreb.hr/dataset/geoportal-javna-igralista",
+  ],
+  [
+    "Geoportal Sportski objekti",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "1. 12. 2022.",
+    "data.zagreb.hr/dataset/geoportal-sportski-objekti",
+  ],
+  [
+    "Geoportal Odmorko",
+    "Školski sportski savez Grada Zagreba",
+    "Otvorena dozvola",
+    "14. 7. 2022.",
+    "data.zagreb.hr/dataset/geoportal-odmorko",
+  ],
+  [
+    "Geoportal gradski vrtovi",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "23. 6. 2022.",
+    "data.zagreb.hr/dataset/geoportal-gradski-vrt",
+  ],
+  [
+    "Geoportal Osnovne škole",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "14. 7. 2022.",
+    "data.zagreb.hr/dataset/geoportal-osnovne-skole",
+  ],
+  [
+    "Geoportal Ustanove za osobe s invaliditetom",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "9. 12. 2022.",
+    "data.zagreb.hr/dataset/geoportal-ustanove-za-osobe-s-invaliditetom",
+  ],
+  [
+    "Knjižnice Grada Zagreba",
+    "Grad Zagreb",
+    "Otvorena dozvola",
+    "7. 3. 2025.",
+    "data.zagreb.hr/dataset/knjiznice-grada-zagreba1",
+  ],
+@@@ replace src/App.tsx
+---find
+<p>Vrijeme hoda računa se po pješačkoj mreži OpenStreetMapa, a ne zračnom udaljenošću.</p>
+---with
+<p>
+              Udaljenosti su zračne (ravna crta od adrese do objekta) i prikazujemo ih u metrima.
+              Indeks 15 minuta koristi prag od 920 m (80 m/min, faktor zaobilaženja 1,3). Izračun po
+              pješačkoj mreži (OpenStreetMap) predviđen je u sljedećoj fazi.
+            </p>
+            <p>
+              ZET-ov GTFS ne sadrži polja o pristupačnosti stajališta i vozila, pa ih prikazujemo kao
+              „nema podatka” — nikad kao „pristupačno” ili „nepristupačno”.
+            </p>
+@@@ replace src/App.tsx
+---find
+<Metric icon={GraduationCap} label="Škola" value="4 min" />
+---with
+<Metric icon={GraduationCap} label="Škola" value="260 m" />
+@@@ replace src/App.tsx
+---find
+  const navigate = (target: Page, nextAddress?: string) => {
+    const query = nextAddress ? `?adresa=${encodeURIComponent(nextAddress)}` : "";
+---with
+  const navigate = (target: Page, nextAddress?: string, profile?: Profile) => {
+    const params = new URLSearchParams();
+    if (nextAddress) params.set("adresa", nextAddress);
+    if (profile && profile !== "Općenito") params.set("profil", profile);
+    const query = params.toString() ? `?${params.toString()}` : "";
+@@@ replace src/App.tsx
+---find
+  const openAddress = (nextAddress: string) => navigate("karton", nextAddress);
+---with
+  const openAddress = (nextAddress: string, profile?: Profile) =>
+    navigate("karton", nextAddress, profile);
