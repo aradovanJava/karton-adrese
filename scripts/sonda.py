@@ -227,43 +227,77 @@ def sonda_dodatno():
 
 
 def sonda_gisco():
-    """Eurostat GISCO – popis 2021. na mreži 1 km² za Hrvatsku (INSPIRE paket po državi, CSV)."""
+    """Eurostat GISCO – popis 2021. na mreži 1 km² za Hrvatsku (INSPIRE paket po državi)."""
+    import re
+    import sqlite3
     print("\n=== GISCO popis 2021. – Hrvatska")
-    ispis_odgovora("ATOM", "https://gisco-services.ec.europa.eu/census/2021/INSPIRE/PD.atom", 1500)
-    for ime in ("HR_PD_3035_CSV.zip",):
-        url = "https://gisco-services.ec.europa.eu/census/2021/INSPIRE/Data/" + ime
-        try:
-            podaci, odrezano = dohvati(url, 300 * 1024 * 1024)
-        except Exception as e:  # noqa: BLE001
-            print(f"  {ime}: {e!r}")
+    atom = tekst(dohvati("https://gisco-services.ec.europa.eu/census/2021/INSPIRE/PD.atom")[0])
+    unos = next((u for u in re.findall(r"<entry>.*?</entry>", atom, re.S) if "Croatia" in u or "HR_PD" in u), "")
+    print("  ATOM unos za Hrvatsku:\n    " + unos.replace("\n", "\n    "))
+    ispis_odgovora("indeks pub/population-grid/2021", "https://gisco-services.ec.europa.eu/pub/population-grid/2021/", 1500)
+    poveznice = re.findall(r'href="([^"]+)"', unos)
+    poveznice.sort(key=lambda u: 0 if u.endswith("_CSV.zip") else 1 if u.endswith("_GPKG.zip") else 2)
+
+    def u_zagrebu(r):
+        m = re.search(r"N(\d+)E(\d+)", r)
+        if not m:
+            return False
+        n, e = int(m.group(1)), int(m.group(2))
+        n, e = (n * 1000, e * 1000) if n < 100000 else (n, e)
+        return 2450000 <= n <= 2550000 and 4760000 <= e <= 4860000
+
+    for url in poveznice:
+        if not url.endswith((".zip",)) or "_GML" in url:
             continue
-        print(f"  {ime}: {len(podaci)} B{' (ODREZANO)' if odrezano else ''}")
+        podaci = None
+        for pokusaj in range(4):
+            try:
+                podaci, odrezano = dohvati(url, 400 * 1024 * 1024)
+                break
+            except Exception as e:  # noqa: BLE001
+                print(f"  {url}: pokušaj {pokusaj + 1}: {e!r}")
+                time.sleep(15)
+        if podaci is None:
+            continue
+        print(f"  {url}: {len(podaci)} B{' (ODREZANO)' if odrezano else ''}")
         z = zipfile.ZipFile(io.BytesIO(podaci))
         for info in z.infolist():
             print(f"    {info.filename} {info.file_size} B")
         for info in z.infolist():
-            if not info.filename.lower().endswith(".csv"):
-                if info.filename.lower().endswith((".xml", ".txt", ".json")):
-                    print("    --- " + info.filename + "\n    " + tekst(z.read(info))[:3000].replace("\n", "\n    "))
-                continue
-            t = tekst(z.read(info))
-            redovi = t.splitlines()
-            print(f"    --- {info.filename}: {len(redovi)} redaka")
-            for r in redovi[:8]:
-                print("    " + r[:400])
-            # isječak oko Zagreba (N 2450–2550 km, E 4760–4860 km u EPSG:3035)
-            import re
-            def u_zagrebu(r):
-                m = re.search(r"N(\d+)E(\d+)", r)
-                if not m:
-                    return False
-                n, e = int(m.group(1)), int(m.group(2))
-                n, e = (n * 1000, e * 1000) if n < 100000 else (n, e)
-                return 2450000 <= n <= 2550000 and 4760000 <= e <= 4860000
-            isjecak = [redovi[0]] + [r for r in redovi[1:] if u_zagrebu(r)]
-            print(f"    redaka u isječku Zagreba: {len(isjecak) - 1}")
-            with open(os.path.join(IZLAZ, "gisco-" + os.path.basename(info.filename)), "w", encoding="utf-8") as d:
-                d.write("\n".join(isjecak))
+            ime = info.filename.lower()
+            if ime.endswith((".xml", ".txt", ".json", ".md")) and info.file_size < 200000:
+                print("    --- " + info.filename + "\n    " + tekst(z.read(info))[:2500].replace("\n", "\n    "))
+            elif ime.endswith(".csv"):
+                redovi = tekst(z.read(info)).splitlines()
+                print(f"    --- {info.filename}: {len(redovi)} redaka")
+                for r in redovi[:8]:
+                    print("    " + r[:400])
+                isjecak = [redovi[0]] + [r for r in redovi[1:] if u_zagrebu(r)]
+                print(f"    redaka u isječku Zagreba: {len(isjecak) - 1}")
+                with open(os.path.join(IZLAZ, "gisco-" + os.path.basename(info.filename)), "w", encoding="utf-8") as d:
+                    d.write("\n".join(isjecak))
+            elif ime.endswith(".gpkg"):
+                put = os.path.join(IZLAZ, "privremeno.gpkg")
+                with open(put, "wb") as d:
+                    d.write(z.read(info))
+                veza = sqlite3.connect(put)
+                for (tablica,) in veza.execute("select table_name from gpkg_contents"):
+                    stupci = [r[1] for r in veza.execute(f'pragma table_info("{tablica}")')]
+                    n = veza.execute(f'select count(*) from "{tablica}"').fetchone()[0]
+                    print(f"    GPKG tablica {tablica}: {n} redaka, stupci {stupci}")
+                    bez_geom = [c for c in stupci if c.lower() not in ("geom", "geometry", "shape")]
+                    redovi = veza.execute(f'select {",".join(chr(34) + c + chr(34) for c in bez_geom)} from "{tablica}"').fetchall()
+                    for r in redovi[:5]:
+                        print(f"    {r}")
+                    isjecak = [r for r in redovi if u_zagrebu(" ".join(str(x) for x in r))]
+                    print(f"    redaka u isječku Zagreba: {len(isjecak)}")
+                    with open(os.path.join(IZLAZ, f"gisco-{tablica}.csv"), "w", encoding="utf-8", newline="") as d:
+                        w = csv.writer(d)
+                        w.writerow(bez_geom)
+                        w.writerows(isjecak)
+                veza.close()
+                os.remove(put)
+        break
 
 
 def sonda_popis():
