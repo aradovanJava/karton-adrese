@@ -1,0 +1,45 @@
+name: Snimke zaslona
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["implementacija-*"]
+    paths:
+      - "src/main/resources/templates/**"
+      - "src/main/resources/static/**"
+      - "scripts/snimke.py"
+
+permissions:
+  contents: read
+
+jobs:
+  snimke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Izgradnja i pokretanje (ogledni način)
+        run: |
+          mvn -B -ntp -q -DskipTests package
+          nohup java -jar target/karton-adrese-*.jar > app.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS http://localhost:8080/actuator/health && break; sleep 3; done
+      - name: Playwright
+        run: |
+          pip install -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Snimke
+        run: python scripts/snimke.py http://localhost:8080 docs/snimke --base64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snimke-zaslona
+          path: docs/snimke
+      - name: Zapis aplikacije
+        if: always()
+        run: tail -n 100 app.log

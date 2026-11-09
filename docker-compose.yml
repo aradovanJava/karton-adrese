@@ -1,0 +1,52 @@
+# Karton adrese – PostgreSQL/PostGIS + aplikacija (+ neobavezno treniranje modela)
+#
+#   docker compose up -d --build                 # baza i aplikacija na http://localhost:8080
+#   docker compose run --rm aplikacija --uvoz=sve --zatvori
+#                                                # uvoz stvarnih izvora (ili POST /api/admin/uvoz s X-Admin-Token)
+#   docker compose --profile ml run --rm ml      # treniranje oglednog modela u ./model
+services:
+  baza:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: karton
+      POSTGRES_USER: karton
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-karton}
+    volumes:
+      - baza-podaci:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U karton -d karton"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  aplikacija:
+    build: .
+    depends_on:
+      baza:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgis
+      DB_HOST: baza
+      DB_PASSWORD: ${DB_PASSWORD:-karton}
+      KARTON_ADMIN_TOKEN: ${KARTON_ADMIN_TOKEN:-}
+      KARTON_USER_AGENT: ${KARTON_USER_AGENT:-karton-adrese/1.0 (+https://github.com/aradovanJava/karton-adrese)}
+      # true = učitaj ogledne podatke u PostGIS (za provjeru bez interneta)
+      KARTON_OGLEDNIPODACI: ${KARTON_OGLEDNI:-false}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./model:/app/model:ro
+
+  ml:
+    profiles: ["ml"]
+    image: python:3.12-slim
+    working_dir: /rad/ml
+    volumes:
+      - ./ml:/rad/ml
+      - ./model:/rad/model
+    command: sh -c "pip install -q -r requirements.txt && python -m karton_ml.treniranje --ogledni"
+
+volumes:
+  baza-podaci:

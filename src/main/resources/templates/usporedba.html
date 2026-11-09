@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmenti/raspored :: glava('Usporedba adresa')}"></head>
+<body>
+<header th:replace="~{fragmenti/raspored :: zaglavlje}"></header>
+
+<main id="sadrzaj" class="container">
+    <section style="padding:40px 0 16px">
+        <p class="nadnaslov">Usporedba</p>
+        <h1>Dvije adrese, pregledno uspoređene</h1>
+        <p class="muted" style="max-width:62ch">Uspoređujemo javno dostupne podatke po istim kriterijima. Istaknuta vrijednost
+            znači samo kraću udaljenost ili veću dostupnost – ne ocjenjujemo naselje ni vrijednost nekretnine.</p>
+    </section>
+
+    <form class="kartica usporedba-obrazac" th:action="@{/usporedba}" method="get">
+        <div th:replace="~{fragmenti/raspored :: upis-adrese('a', ${a}, 'Prva adresa (A)', 'adresa-a')}"></div>
+        <div th:replace="~{fragmenti/raspored :: upis-adrese('b', ${b}, 'Druga adresa (B)', 'adresa-b')}"></div>
+        <input type="hidden" name="profil" th:value="${profil.oznaka}">
+        <div class="polje"><button class="gumb" type="submit">Usporedi</button></div>
+    </form>
+
+    <div class="obavijest greska" role="alert" th:if="${greska}"><span aria-hidden="true">⚠</span><span th:text="${greska}">Greška</span></div>
+
+    <div class="kartica" style="margin-top:24px;text-align:center" th:if="${usporedba == null and greska == null}">
+        <p style="font-size:32px;margin:0" aria-hidden="true">⇄</p>
+        <h2>Odaberite dvije različite adrese</h2>
+        <p class="muted">Rezultati će se prikazati u tablici po istim kriterijima i izvorima.</p>
+        <p class="mala" th:if="${primjeri.size() >= 2}">Primjer:
+            <a th:href="@{/usporedba(a=${primjeri[0]},b=${primjeri[1]})}" th:text="|${primjeri[0]} i ${primjeri[1]}|">primjer</a></p>
+    </div>
+
+    <div class="tablica-omot" style="margin-top:24px" th:if="${usporedba != null}">
+        <table class="kartice-mobilno">
+            <caption class="sr-only">Usporedba dviju adresa</caption>
+            <thead>
+            <tr>
+                <th scope="col">Kriterij</th>
+                <th scope="col"><a th:href="@{/karton(adresa=${usporedba.a.adresa})}" th:text="|A: ${usporedba.a.adresa}|">A</a></th>
+                <th scope="col"><a th:href="@{/karton(adresa=${usporedba.b.adresa})}" th:text="|B: ${usporedba.b.adresa}|">B</a></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${usporedba.redovi}">
+                <th scope="row" style="background:none;text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink)" th:text="${r.kriterij}">Škola</th>
+                <td th:attr="data-oznaka=|A: ${usporedba.a.adresa}|" th:classappend="${r.bolje == 'A'} ? 'bolje'">
+                    <span th:text="${r.a}">260 m</span>
+                    <span class="bolje-oznaka" th:if="${r.bolje == 'A'}">✓ Bliže / dostupnije</span></td>
+                <td th:attr="data-oznaka=|B: ${usporedba.b.adresa}|" th:classappend="${r.bolje == 'B'} ? 'bolje'">
+                    <span th:text="${r.b}">420 m</span>
+                    <span class="bolje-oznaka" th:if="${r.bolje == 'B'}">✓ Bliže / dostupnije</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="mala muted" style="margin-top:12px" th:if="${usporedba != null}">ⓘ Podaci su informativni i ne predstavljaju
+        procjenu vrijednosti nekretnine ni sigurnosti naselja. Izvori su navedeni na kartonu svake adrese.</p>
+</main>
+
+<footer th:replace="~{fragmenti/raspored :: podnozje}"></footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Karton adrese – ML pipeline (Python 3.11+)
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+lightgbm>=4.5
+onnx>=1.17
+onnxmltools>=1.13
+onnxruntime>=1.20
+requests>=2.32
+openpyxl>=3.1
+pytest>=8.0
+# Neobavezno, samo za izravno preuzimanje ERA5 iz Copernicus Climate Data Storea:
+# cdsapi>=0.7
+# xarray>=2024.6
+# netCDF4>=1.7
