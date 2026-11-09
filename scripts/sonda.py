@@ -226,6 +226,56 @@ def sonda_dodatno():
         ispis_odgovora(f"GetCapabilities {put}", f"https://geostat.dzs.hr/{put}?service=WFS&request=GetCapabilities", 1500)
 
 
+def sonda_gisco_eu(u_zagrebu_fn=None):
+    import re
+    url = "https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip"
+    put = os.path.join("/tmp", "grid.zip")
+    zahtjev = urllib.request.Request(url, headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(zahtjev, timeout=300) as odg, open(put, "wb") as d:
+            print(f"  {url}: Content-Length={odg.headers.get('Content-Length')}")
+            while True:
+                b = odg.read(1 << 20)
+                if not b:
+                    break
+                d.write(b)
+    except Exception as e:  # noqa: BLE001
+        print(f"  {url}: {e!r}")
+        return
+    print(f"  preuzeto {os.path.getsize(put)} B")
+    z = zipfile.ZipFile(put)
+    for info in z.infolist():
+        print(f"    {info.filename} {info.file_size} B (sažeto {info.compress_size})")
+
+    def u_zagrebu(r):
+        m = re.search(r"N(\d+)E(\d+)", r)
+        if not m:
+            return False
+        n, e = int(m.group(1)), int(m.group(2))
+        return 2450000 <= n <= 2550000 and 4760000 <= e <= 4860000
+
+    for info in z.infolist():
+        ime = info.filename.lower()
+        if ime.endswith((".txt", ".md", ".xml", ".json")) and info.file_size < 300000:
+            print("    --- " + info.filename + "\n    " + tekst(z.read(info))[:3000].replace("\n", "\n    "))
+        if not ime.endswith(".csv"):
+            continue
+        with z.open(info) as f:
+            tok = io.TextIOWrapper(f, encoding="utf-8-sig", errors="replace")
+            zaglavlje = tok.readline().rstrip("\n")
+            print(f"    --- {info.filename}\n    {zaglavlje}")
+            isjecak, hr, ukupno = [zaglavlje], 0, 0
+            for i, r in enumerate(tok):
+                ukupno += 1
+                if i < 5:
+                    print("    " + r.rstrip()[:300])
+                if u_zagrebu(r):
+                    isjecak.append(r.rstrip("\n"))
+            print(f"    redaka: {ukupno}, u isječku Zagreba: {len(isjecak) - 1}")
+        with open(os.path.join(IZLAZ, "gisco-zagreb-" + os.path.basename(info.filename)), "w", encoding="utf-8") as d:
+            d.write("\n".join(isjecak))
+
+
 def sonda_gisco():
     """Eurostat GISCO – popis 2021. na mreži 1 km² za Hrvatsku (INSPIRE paket po državi)."""
     import re
@@ -236,6 +286,9 @@ def sonda_gisco():
     print("  ATOM unos za Hrvatsku:\n    " + unos.replace("\n", "\n    "))
     ispis_odgovora("indeks pub/population-grid/2021", "https://gisco-services.ec.europa.eu/pub/population-grid/2021/", 1500)
     poveznice = re.findall(r'href="([^"]+)"', unos)
+    # INSPIRE paketi po državi vraćaju 503 – provjera cjelovite mreže EU (verzija 3, 30. 5. 2026.)
+    sonda_gisco_eu(u_zagrebu_fn=None)
+    return
     poveznice.sort(key=lambda u: 0 if u.endswith("_CSV.zip") else 1 if u.endswith("_GPKG.zip") else 2)
 
     def u_zagrebu(r):
