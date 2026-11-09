@@ -265,7 +265,7 @@ def sonda_gisco_eu(u_zagrebu_fn=None):
         if not m:
             return False
         n, e = int(m.group(1)), int(m.group(2))
-        return 2450000 <= n <= 2550000 and 4760000 <= e <= 4860000
+        return 2500000 <= n <= 2570000 and 4755000 <= e <= 4825000
 
     for info in z.infolist():
         ime = info.filename.lower()
@@ -448,6 +448,8 @@ def main():
     if os.environ.get("SONDA_POPIS"):
         print("\n=== GISCO Range")
         sonda_range()
+        print("\n=== GISCO V3 – isječak Zagreba")
+        sonda_gisco_eu()
         for paket in ("zborna-mjesta-civilne-zastite-grada-zagreba", "evakuacijske-povrsine"):
             sonda_sve_resurse(ZG, paket)
         PAKETI.clear()

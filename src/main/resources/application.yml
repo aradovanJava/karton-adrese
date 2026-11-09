@@ -133,6 +133,8 @@ karton:
       portal: https://data.zagreb.hr
       paket: zborna-mjesta-civilne-zastite-grada-zagreba
       kategorija: ZBORNO_MJESTO
+      # GeoJSON ima samo svojstva OBJECTID, gradska_ce i zboriste (naziv lokacije) – bez „naziv” i adrese
+      stupac-naziv: zboriste
     - id: zg-evakuacija
       naziv: Evakuacijske površine
       izdavatelj: Grad Zagreb
@@ -309,13 +311,26 @@ karton:
       url: https://zet.hr/gtfs-scheduled/latest
       poveznica: https://www.zet.hr/odredbe/datoteke-u-gtfs-formatu/669
     - id: dzs-popis-2021
-      naziv: Popis stanovništva 2021. na mreži 1 km²
+      naziv: Popis stanovništva 2021. na mreži 1 km² (Eurostat Census grid 2021, podaci DZS-a)
+      izdavatelj: Državni zavod za statistiku / Eurostat
+      licenca: Ponovna uporaba uz navođenje izvora (Eurostat)
+      vrsta: POPIS_MREZA
+      # Iz arhive (≈ 570 MB) HTTP rasponima se preuzima samo CSV (≈ 50 MB sažeto) i čitaju ćelije područja.
+      url: https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip
+      upit: ESTAT_Census_2021_V3.csv
+      poveznica: https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids
+      # Bez interneta: isječak za Zagreb i okolicu priložen uz aplikaciju
+      # url: classpath:popis/popis-2021-zagreb.csv.gz
+    # INSPIRE WFS DZS-a (pd-2021) vraća jedan objekt StatisticalDistribution za cijelu Hrvatsku, s najviše
+    # 100 ugniježđenih vrijednosti i bez geometrije ćelija, pa nije upotrebljiv za mrežu (provjereno 9. 11. 2026.).
+    - id: dzs-popis-2021-wfs
+      naziv: Popis stanovništva 2021. – INSPIRE WFS (StatisticalDistribution)
       izdavatelj: Državni zavod za statistiku
       licenca: Otvorena dozvola
       vrsta: WFS_POPIS
       url: https://geostat.dzs.hr/inspire/pd-2021/wfs
       poveznica: https://registri.nipp.hr/tcpdf/print/izvor_javno.php?id=1750
-      # upit: <naziv sloja>   # ako automatski odabir sloja iz GetCapabilities ne odgovara
+      omogucen: false
 
     # --- Pomoćni otvoreni izvori (nisu javni sektor) – OpenStreetMap, ODbL ---
     - id: osm-trgovine

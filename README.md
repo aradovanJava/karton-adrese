@@ -320,7 +320,7 @@ Sva se konfiguracija nalazi u `src/main/resources/application.yml`. Svaki izvor 
   naziv: Ljekarne Grada Zagreba
   izdavatelj: Grad Zagreb
   licenca: Otvorena dozvola
-  vrsta: CKAN                           # CKAN | GEOJSON_URL | TABLICA_URL | OVERPASS | GTFS | WFS_POPIS | GRANICE | ULICE
+  vrsta: CKAN                           # CKAN | GEOJSON_URL | TABLICA_URL | OVERPASS | GTFS | POPIS_MREZA | WFS_POPIS | GRANICE | ULICE
   portal: https://data.zagreb.hr        # data.gov.hr: https://data.gov.hr/ckan
   paket: ljekarne-grada-zagreba         # identifikator skupa na portalu
   kategorija: LJEKARNA                  # zajednički šifrarnik kategorija
@@ -360,6 +360,16 @@ MENZA, STUDENTSKI_DOM, BICIKLISTICKA_STAZA, JAVNI_BICIKL, PRISTUPACNOST, PJESACK
 | `zg-gradski-vrtovi` | Geoportal gradski vrt | GeoJSON, MultiPolygon | 15 |
 | `zg-knjiznice` | Knjižnice Grada Zagreba | XLSX (koordinate nisu provjerene – po potrebi geokodiranje) | – |
 | `osm-igralista`, `osm-parkovi` | OpenStreetMap: dječja igrališta i parkovi s obrisom | Overpass | ≈ 860 / ≈ 100 |
+
+**Sekcije „U slučaju potresa” i „Gustoća stanovništva” (provjereno sondom 9. 11. 2026.):**
+
+| `id` | Skup | Što je bilo pogrešno | Rješenje |
+|---|---|---|---|
+| `zg-zborna-mjesta` | Zborna mjesta civilne zaštite Grada Zagreba (GeoJSON, 17 točaka, po jedna u četvrti) | naziv je u svojstvu `zboriste`, adrese nema, pa je uvoz odbacio sve zapise kao „bez naziva”; uz to je najbliže zborno mjesto često dalje od 2,5 km | `stupac-naziv: zboriste`; zborna mjesta i evakuacijske površine traže se u krugu od 6 km |
+| `zg-evakuacija` | Evakuacijske površine Grada Zagreba (GeoJSON, 67 poligona, `NAZIV`, `Tip`) | – | udaljenost do ruba površine |
+| `dzs-popis-2021` | Popis 2021. na mreži 1 km² | INSPIRE WFS DZS-a (`geostat.dzs.hr/inspire/pd-2021/wfs`) ima samo sloj `StatisticalDistribution`: jedan objekt za cijelu Hrvatsku, vrijednosti po ćelijama ugniježđene u svojstvu `value` (poslužitelj vraća najviše 100 ćelija × 12 kombinacija spola i dobi) i bez geometrije ćelija (samo poveznica na `su-grid-2021`) | isti podaci DZS-a iz Eurostatove „Census grid 2021” (V3, 30. 5. 2026.): iz ZIP-a od ≈ 570 MB HTTP rasponima se preuzima samo CSV (≈ 50 MB sažeto) i čitaju ćelije Zagreba (`GRD_ID`, `T`); bez interneta `url: classpath:popis/popis-2021-zagreb.csv.gz` |
+
+Paketi „INSPIRE PD” po državama na GISCO-u (`HR_PD_3035_CSV.zip` i sl.) u trenutku provjere vraćali su HTTP 503.
 
 Napomene iz provjere:
 - **data.gov.hr** odbija veze s poslužitelja izvan Hrvatske (GitHub Actions dobiva „Connection reset”). Zato se
@@ -418,7 +428,7 @@ curl "http://localhost:8080/api/karton?adresa=Gorjanovi%C4%87eva%20ulica%2015&pr
 | Sloj arhitekture | Paket / mapa |
 |---|---|
 | 1 Izvori | `application.yml` → `karton.izvori` |
-| 2 Prikupljanje | `uvoz` (CKAN, Overpass, GTFS, DZS WFS, granice, ulice; raspored osvježavanja) |
+| 2 Prikupljanje | `uvoz` (CKAN, Overpass, GTFS, popis 2021. na mreži 1 km², granice, ulice; raspored osvježavanja) |
 | 3 Usklađivanje | `core.uvoz` (prepoznavanje stupaca, GeoJSON), `core.geo` (HTRS96/TM, EPSG:3035), `core.tablica` |
 | 4 Pohrana | `baza` (JDBC), `db/migration/postgresql` (PostGIS) i `db/migration/h2` |
 | 5 Model | `ml/` (Python), `model/` (ONNX), `ml.ModelZraka` i `core.ml` (Java) |
@@ -526,7 +536,7 @@ mete od najmanje 44 px, tablična alternativa grafu, prilagodba za 375 px i poš
 - **Izlazni skup** indeksa grada 15 minuta: **CC BY 4.0**. Navesti: *Karton adrese, na temelju otvorenih podataka
   Grada Zagreba, ZET-a i DZS-a te OpenStreetMapa*.
 - **Ulazni podaci:** Grad Zagreb i Portal otvorenih podataka RH (Otvorena dozvola ili CC BY 4.0, kako navodi
-  izdavatelj); ZET (GTFS); DZS (Popis 2021.); Copernicus ERA5 („Contains modified Copernicus Climate Change Service
+  izdavatelj); ZET (GTFS); DZS i Eurostat (Popis 2021. na mreži 1 km², „Census grid 2021”); Copernicus ERA5 („Contains modified Copernicus Climate Change Service
   information”); © suradnici OpenStreetMapa (ODbL); podloga Esri ili Digitalni ortofoto DGU 2024. (Otvorena dozvola).
 - Aplikacija ne prikuplja osobne podatke. Upisane adrese se ne spremaju uz korisnika, kolačići za praćenje se ne
   koriste, a e-pošta u prijavi pogreške nije obavezna.
@@ -549,8 +559,6 @@ iz OpenStreetMapa.
 **Treba provjeriti sa stvarnim izvorima** (iz razvojnog okruženja nisu bili dohvatljivi):
 - identifikatore skupova i strukturu stupaca na data.zagreb.hr i data.gov.hr (prepoznavanje stupaca je automatsko, ali
   svaki skup treba jednom pregledati na `/podaci`),
-- naziv sloja i atribute DZS WFS-a za Popis 2021. (sloj se bira automatski iz GetCapabilities; po potrebi ga upišite u
-  `upit`),
 - adresu ZET GTFS datoteke i sučelje ISKZL za preuzimanje mjerenja (označeno kao eksperimentalno u
   `ml/karton_ml/podaci.py`),
 - Open-Meteo ERA5 preuzimanje (`--preuzmi-meteo`); zamjena je izravno preuzimanje iz Copernicus CDS-a.

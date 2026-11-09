@@ -80,7 +80,14 @@ public class PopisWfsUvoz {
 
         Map<String, double[]> sredista = new HashMap<>();
         Map<String, Integer> stanovnika = new HashMap<>();
-        for (Object f : Json.niz(Json.objekt(geojson), "features")) {
+        List<Object> objekti = Json.niz(Json.objekt(geojson), "features");
+        if (jeInspireRaspodjela(objekti)) {
+            throw new IOException("WFS " + k.url() + " objavljuje INSPIRE StatisticalDistribution: jedan objekt za "
+                    + "cijelu državu, broj stanovnika ugniježđen po ćelijama (poslužitelj vraća najviše "
+                    + brojVrijednosti(objekti) + " vrijednosti) i bez geometrije ćelija (samo poveznica na "
+                    + "su-grid-2021). Za mrežu 1 km² upotrijebite izvor vrste POPIS_MREZA (Eurostat Census grid 2021).");
+        }
+        for (Object f : objekti) {
             Map<String, String> svojstvaCelije = new LinkedHashMap<>();
             Json.mapa(f, "properties").forEach((kljuc, v) -> svojstvaCelije.put(kljuc, String.valueOf(v)));
             Optional<Integer> n = vrijednost(svojstvaCelije, STANOVNISTVO).flatMap(PrepoznavanjePolja::broj)
@@ -96,6 +103,20 @@ public class PopisWfsUvoz {
             stanovnika.merge(id, n.get(), Integer::sum);
         }
         return new Mreza(sredista, stanovnika, sloj);
+    }
+
+    /** INSPIRE PD: svojstvo „value” je niz StatisticalValue s dimenzijama (prostorna = poveznica na ćeliju). */
+    static boolean jeInspireRaspodjela(List<Object> objekti) {
+        return objekti.size() <= 5 && objekti.stream().anyMatch(f -> {
+            Object v = Json.mapa(f, "properties").get("value");
+            return v instanceof List<?> l && !l.isEmpty() && l.getFirst() instanceof Map<?, ?> m
+                    && m.containsKey("dimensions");
+        });
+    }
+
+    private static int brojVrijednosti(List<Object> objekti) {
+        return objekti.stream().mapToInt(f -> Json.mapa(f, "properties").get("value") instanceof List<?> l ? l.size() : 0)
+                .sum();
     }
 
     private static Optional<String> vrijednost(Map<String, String> svojstva, List<String> kandidati) {
