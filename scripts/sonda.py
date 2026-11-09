@@ -254,7 +254,7 @@ def sonda_gisco():
             # isječak oko Zagreba (N 2450–2550 km, E 4760–4860 km u EPSG:3035)
             import re
             def u_zagrebu(r):
-                m = re.search(r"N(\\d+)E(\\d+)", r)
+                m = re.search(r"N(\d+)E(\d+)", r)
                 if not m:
                     return False
                 n, e = int(m.group(1)), int(m.group(2))
