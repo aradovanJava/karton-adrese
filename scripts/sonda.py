@@ -226,6 +226,19 @@ def sonda_dodatno():
         ispis_odgovora(f"GetCapabilities {put}", f"https://geostat.dzs.hr/{put}?service=WFS&request=GetCapabilities", 1500)
 
 
+def sonda_range():
+    url = "https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip"
+    for raspon in ("bytes=-70000", "bytes=0-99"):
+        zahtjev = urllib.request.Request(url, headers={"User-Agent": UA, "Range": raspon})
+        try:
+            with urllib.request.urlopen(zahtjev, timeout=120) as odg:
+                tijelo = odg.read(200000)
+                print(f"  Range {raspon}: HTTP {odg.status}, Content-Range={odg.headers.get('Content-Range')}, "
+                      f"Accept-Ranges={odg.headers.get('Accept-Ranges')}, {len(tijelo)} B")
+        except Exception as e:  # noqa: BLE001
+            print(f"  Range {raspon}: {e!r}")
+
+
 def sonda_gisco_eu(u_zagrebu_fn=None):
     import re
     url = "https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip"
@@ -433,7 +446,8 @@ def sonda_sve_resurse(portal, paket):
 def main():
     os.makedirs(IZLAZ, exist_ok=True)
     if os.environ.get("SONDA_POPIS"):
-        sonda_gisco()
+        print("\n=== GISCO Range")
+        sonda_range()
         for paket in ("zborna-mjesta-civilne-zastite-grada-zagreba", "evakuacijske-povrsine"):
             sonda_sve_resurse(ZG, paket)
         PAKETI.clear()
