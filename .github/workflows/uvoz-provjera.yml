@@ -1,0 +1,62 @@
+name: Provjera uvoza stvarnih izvora
+
+# Uvozi odabrane stvarne izvore u PostGIS (Docker Compose) i provjerava rezultat preko API-ja.
+# Ovisi o dostupnosti vanjskih poslužitelja (data.zagreb.hr, Eurostat GISCO), pa nije dio CI-ja.
+on:
+  workflow_dispatch:
+    inputs:
+      izvori:
+        description: "id-ovi izvora odvojeni zarezom"
+        default: "zg-zborna-mjesta,zg-evakuacija,dzs-popis-2021"
+  push:
+    branches: ["implementacija-*"]
+    paths:
+      - "src/main/java/hr/kartonadrese/uvoz/**"
+      - "src/main/java/hr/kartonadrese/core/uvoz/**"
+      - ".github/workflows/uvoz-provjera.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  uvoz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Izgradnja i baza
+        run: docker compose up -d --build baza
+      - name: Uvoz
+        env:
+          IZVORI: ${{ github.event.inputs.izvori || 'zg-zborna-mjesta,zg-evakuacija,dzs-popis-2021' }}
+        run: docker compose run --rm aplikacija --uvoz=$IZVORI --zatvori 2>&1 | tee /tmp/uvoz.log | grep -E "Uvoz|Popis|POGREŠKA|WARN|ERROR" | head -60
+      - name: Aplikacija
+        run: |
+          docker compose up -d aplikacija
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health | grep -q '"UP"'; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs aplikacija; exit 1
+      - name: Provjere
+        run: |
+          set -e
+          echo "--- zborna mjesta i evakuacijske površine oko Gorjanovićeve 15"
+          curl -fsS "http://localhost:8080/api/okolica?lat=45.8186&lon=16.0048&r=3000&kategorije=ZBORNO_MJESTO,EVAKUACIJA" -o /tmp/okolica.json
+          python3 - <<'EOF'
+          import json
+          d = json.load(open("/tmp/okolica.json"))
+          for o in d[:8]:
+              print(o["kategorija"], "|", o["naziv"], "|", o["udaljenostM"], "m")
+          assert any(o["kategorija"] == "ZBORNO_MJESTO" for o in d), "nema zbornih mjesta"
+          assert any(o["kategorija"] == "EVAKUACIJA" for o in d), "nema evakuacijskih površina"
+          EOF
+          echo "--- ćelija Gorjanovićeve 15"
+          curl -fsS "http://localhost:8080/api/indeks15?celija=CRS3035RES1000mN2541000E4787000" | tee /tmp/celija.json; echo
+          grep -q "11022" /tmp/celija.json
+          echo "--- stanje izvora"
+          curl -fsS "http://localhost:8080/podaci" | python3 -c "import sys,re,html; t=re.sub(r'<[^>]+>',' ',sys.stdin.read()); t=html.unescape(re.sub(r'\s+',' ',t)); i=t.find('Zborna'); print(t[i-200:i+600]); j=t.find('Popis stanovništva'); print(t[j-100:j+600])"
+      - name: Zapisi
+        if: always()
+        run: |
+          tail -80 /tmp/uvoz.log || true
+          docker compose logs --tail=80 aplikacija
