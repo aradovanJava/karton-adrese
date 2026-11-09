@@ -17,6 +17,7 @@ import java.util.List;
  * <pre>
  *   java -jar karton-adrese.jar --uvoz=sve            # uvoz svih izvora, zatim aplikacija radi dalje
  *   java -jar karton-adrese.jar --uvoz=zet-gtfs --zatvori   # samo jedan izvor, pa izlaz
+ *   java -jar karton-adrese.jar --uvoz=zg-zborna-mjesta,dzs-popis-2021 --zatvori   # više izvora
  * </pre>
  * Ako je {@code karton.uvoz.pri-pokretanju=true}, uvoz se pokreće u pozadini pri svakom startu.
  */

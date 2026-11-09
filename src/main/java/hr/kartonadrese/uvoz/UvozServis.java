@@ -116,9 +116,13 @@ public class UvozServis {
         }
         try {
             registrirajIzvore();
+            // "sve", jedan izvor ili više izvora odvojenih zarezom (npr. zg-zborna-mjesta,dzs-popis-2021)
+            java.util.Set<String> trazeni = samoId == null || samoId.isBlank() || samoId.equalsIgnoreCase("sve") ? null
+                    : java.util.Arrays.stream(samoId.split(",")).map(String::trim).filter(x -> !x.isEmpty())
+                    .collect(java.util.stream.Collectors.toSet());
             List<IzvorKonfiguracija> redom = new ArrayList<>(konfigurirani().stream()
                     .filter(IzvorKonfiguracija::jeOmogucen)
-                    .filter(k -> samoId == null || samoId.equalsIgnoreCase("sve") || k.id().equals(samoId))
+                    .filter(k -> trazeni == null || trazeni.contains(k.id()))
                     .toList());
             redom.sort((x, y) -> Integer.compare(redoslijed(x.vrsta()), redoslijed(y.vrsta())));
             if (redom.isEmpty()) {

@@ -174,7 +174,7 @@ računa indeks grada 15 minuta za ćelije mreže 1 km².
 docker compose run --rm aplikacija --uvoz=sve --zatvori
 ```
 
-Za samo jedan izvor upišite njegov `id`, npr. `--uvoz=zet-gtfs`. Uvoz traje od nekoliko minuta do pola sata, ovisno o
+Za samo jedan izvor upišite njegov `id`, npr. `--uvoz=zet-gtfs`, a za više njih ih odvojite zarezom, npr. `--uvoz=zg-zborna-mjesta,zg-evakuacija,dzs-popis-2021`. Uvoz traje od nekoliko minuta do pola sata, ovisno o
 broju adresa koje treba geokodirati: Nominatim dopušta najviše jedan zahtjev u sekundi.
 
 Uvoz se može pokrenuti i dok aplikacija radi, preko administrativnog API-ja. Postavite token u datoteci `.env`
