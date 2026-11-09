@@ -3833,47 +3833,47 @@
     "dana_iznad_50": 4,
     "broj_dana_s_mjerenjem": 354
   },
-  "stvoreno": "2026-11-07T12:59:21+01:00",
+  "stvoreno": "2026-11-09T00:44:40+01:00",
   "verzije": {
     "karton_ml": "1.0.0",
-    "python": "3.13.18",
+    "python": "3.12.6",
     "lightgbm": "4.7.0",
     "onnxmltools": "1.16.0",
-    "onnxruntime": "1.29.0",
+    "onnxruntime": "1.31.1",
     "scikit_learn": "1.9.1"
   },
   "kontrolni_primjer": {
-    "godina": 2027,
+    "godina": 2026,
     "mjesecno": [
       {
         "mjesec": 1,
-        "pm10": 34.15,
-        "donja": 32.51,
-        "gornja": 36.99
+        "pm10": 34.25,
+        "donja": 32.6,
+        "gornja": 37.09
       },
       {
         "mjesec": 2,
-        "pm10": 31.89,
-        "donja": 30.35,
-        "gornja": 34.54
+        "pm10": 31.87,
+        "donja": 30.33,
+        "gornja": 34.51
       },
       {
         "mjesec": 3,
-        "pm10": 27.72,
-        "donja": 26.39,
-        "gornja": 30.03
+        "pm10": 27.66,
+        "donja": 26.32,
+        "gornja": 29.95
       },
       {
         "mjesec": 4,
-        "pm10": 19.62,
+        "pm10": 19.61,
         "donja": 18.67,
         "gornja": 21.24
       },
       {
         "mjesec": 5,
-        "pm10": 12.4,
-        "donja": 11.8,
-        "gornja": 13.43
+        "pm10": 12.38,
+        "donja": 11.78,
+        "gornja": 13.41
       },
       {
         "mjesec": 6,
@@ -3883,27 +3883,27 @@
       },
       {
         "mjesec": 7,
-        "pm10": 9.51,
-        "donja": 9.05,
-        "gornja": 10.29
+        "pm10": 9.52,
+        "donja": 9.06,
+        "gornja": 10.31
       },
       {
         "mjesec": 8,
-        "pm10": 10.05,
-        "donja": 9.57,
-        "gornja": 10.89
+        "pm10": 10.02,
+        "donja": 9.53,
+        "gornja": 10.85
       },
       {
         "mjesec": 9,
-        "pm10": 13.32,
-        "donja": 12.68,
-        "gornja": 14.43
+        "pm10": 13.31,
+        "donja": 12.67,
+        "gornja": 14.42
       },
       {
         "mjesec": 10,
-        "pm10": 20.03,
-        "donja": 19.06,
-        "gornja": 21.69
+        "pm10": 20.07,
+        "donja": 19.1,
+        "gornja": 21.73
       },
       {
         "mjesec": 11,
@@ -3913,9 +3913,9 @@
       },
       {
         "mjesec": 12,
-        "pm10": 29.92,
-        "donja": 28.48,
-        "gornja": 32.4
+        "pm10": 29.87,
+        "donja": 28.43,
+        "gornja": 32.34
       }
     ]
   }
