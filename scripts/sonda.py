@@ -195,8 +195,115 @@ def sonda_overpass():
     print(f"  elemenata: {len(el)}", collections.Counter((e.get("type"), e.get("tags", {}).get("leisure")) for e in el))
 
 
+DZS_WFS = "https://geostat.dzs.hr/inspire/pd-2021/wfs"
+
+
+def ispis_odgovora(naslov, url, najvise=6000):
+    print(f"\n--- {naslov}\n    {url}")
+    try:
+        zahtjev = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(zahtjev, timeout=120) as odg:
+            vrsta = odg.headers.get("Content-Type")
+            podaci = odg.read(NAJVISE)
+        print(f"    HTTP 200, Content-Type={vrsta}, {len(podaci)} B")
+    except urllib.error.HTTPError as e:
+        podaci = e.read()[:najvise]
+        print(f"    HTTP {e.code}: {tekst(podaci)[:najvise]}")
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"    GREŠKA: {e!r}")
+        return None
+    print("    " + tekst(podaci)[:najvise].replace("\n", "\n    "))
+    return podaci
+
+
+def sonda_popis():
+    """DZS INSPIRE WFS – popis 2021. na mreži 1 km² (GetCapabilities, opis sloja, primjeri)."""
+    import re
+    print("\n=== DZS WFS popis 2021.")
+    cap = ispis_odgovora("GetCapabilities", DZS_WFS + "?service=WFS&version=2.0.0&request=GetCapabilities", 2500)
+    if cap is None:
+        cap = ispis_odgovora("GetCapabilities 1.1.0", DZS_WFS + "?service=WFS&version=1.1.0&request=GetCapabilities", 2500)
+    if cap is None:
+        return
+    t = tekst(cap)
+    with open(os.path.join(IZLAZ, "dzs-capabilities.xml"), "w", encoding="utf-8") as d:
+        d.write(t)
+    slojevi = re.findall(r"<(?:wfs:)?FeatureType>.*?<(?:wfs:)?Name>([^<]+)</", t, re.S)
+    print(f"    SLOJEVI: {slojevi}")
+    print(f"    outputFormat: {sorted(set(re.findall(r'<(?:ows:)?Value>([^<]*(?:json|gml|xml)[^<]*)</', t, re.I)))[:30]}")
+    print(f"    CRS: {sorted(set(re.findall(r'<(?:wfs:)?(?:Default|Other)CRS>([^<]+)<', t)))}")
+    for sloj in slojevi[:4]:
+        q = urllib.parse.quote(sloj)
+        ispis_odgovora(f"DescribeFeatureType {sloj}",
+                       f"{DZS_WFS}?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames={q}", 4000)
+        gml = ispis_odgovora(f"GetFeature GML {sloj} (count=2)",
+                             f"{DZS_WFS}?service=WFS&version=2.0.0&request=GetFeature&typeNames={q}&count=2", 5000)
+        if gml:
+            with open(os.path.join(IZLAZ, f"dzs-{sloj.replace(':', '_')}-primjer.gml"), "wb") as d:
+                d.write(gml)
+        ispis_odgovora(f"GetFeature JSON {sloj} (count=2)",
+                       f"{DZS_WFS}?service=WFS&version=2.0.0&request=GetFeature&typeNames={q}&count=2"
+                       "&outputFormat=application/json", 3000)
+        bbox = urllib.parse.quote("45.70000,15.80000,45.90000,16.20000,urn:ogc:def:crs:EPSG::4326")
+        upit = (f"{DZS_WFS}?service=WFS&version=2.0.0&request=GetFeature&typeNames={q}&outputFormat=application%2Fjson"
+                f"&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326&bbox={bbox}&count=50000")
+        cijeli = ispis_odgovora(f"GetFeature kao u aplikaciji {sloj}", upit, 1500)
+        if cijeli:
+            with open(os.path.join(IZLAZ, f"dzs-{sloj.replace(':', '_')}-zagreb.json"), "wb") as d:
+                d.write(cijeli)
+        bbox3035 = urllib.parse.quote("4790000,2490000,4840000,2530000,urn:ogc:def:crs:EPSG::3035")
+        cijeli = ispis_odgovora(f"GetFeature GML bbox EPSG:3035 {sloj}",
+                                f"{DZS_WFS}?service=WFS&version=2.0.0&request=GetFeature&typeNames={q}"
+                                f"&bbox={bbox3035}&count=5000", 1500)
+        if cijeli:
+            with open(os.path.join(IZLAZ, f"dzs-{sloj.replace(':', '_')}-zagreb-3035.gml"), "wb") as d:
+                d.write(cijeli)
+
+
+def sonda_sve_resurse(portal, paket):
+    """Kao sonda_paketa, ali preuzima i prikazuje početak svakog resursa (bilo kojeg formata)."""
+    print(f"\n=== SVI RESURSI {portal} :: {paket}")
+    try:
+        p = ckan(portal, "package_show", id=paket)
+    except Exception as e:  # noqa: BLE001
+        print(f"  NEDOSTUPNO: {e}")
+        return
+    print(f"  naslov: {p.get('title')} | metapodaci: {p.get('metadata_modified')} | organizacija: {(p.get('organization') or {}).get('title')}")
+    print(f"  opis: {(p.get('notes') or '')[:500]!r}")
+    for r in p.get("resources", []):
+        print(f"  - [{r.get('format')}] {r.get('name')} | mimetype={r.get('mimetype')} | izmjena={r.get('last_modified')}")
+        print(f"    {r.get('url')}")
+        try:
+            podaci, odrezano = dohvati(r["url"])
+        except Exception as e:  # noqa: BLE001
+            print(f"    preuzimanje nije uspjelo: {e!r}")
+            continue
+        ime = os.path.basename(urllib.parse.urlparse(r["url"]).path) or "resurs"
+        with open(os.path.join(IZLAZ, f"{paket}__{ime}"), "wb") as d:
+            d.write(podaci)
+        print(f"    {len(podaci)} B{' (ODREZANO)' if odrezano else ''}, početak: {podaci[:12]!r}")
+        if podaci[:2] != b"PK" and not podaci.startswith(b"%PDF"):
+            print("    " + tekst(podaci)[:1200].replace("\n", "\n    "))
+        elif podaci[:2] == b"PK":
+            try:
+                z = zipfile.ZipFile(io.BytesIO(podaci))
+                print(f"    ZIP: {z.namelist()[:20]}")
+            except Exception as e:  # noqa: BLE001
+                print(f"    nije ZIP: {e}")
+        time.sleep(0.5)
+
+
 def main():
     os.makedirs(IZLAZ, exist_ok=True)
+    if os.environ.get("SONDA_POPIS"):
+        sonda_popis()
+        for paket in ("zborna-mjesta-civilne-zastite-grada-zagreba", "evakuacijske-povrsine"):
+            sonda_sve_resurse(ZG, paket)
+        PAKETI.clear()
+        PRETRAGE[:] = [(ZG, "zborna mjesta"), (ZG, "civilne zaštite"), (ZG, "evakuacij"), (ZG, "potres"),
+                       (ZG, "sklonište"), (GOV, "zborna mjesta"), (GOV, "popis stanovništva 2021 mreža"),
+                       (GOV, "prostorna distribucija stanovništva")]
     if os.environ.get("SONDA_SAMO_OSM"):
         sonda_overpass()
         PAKETI.clear()

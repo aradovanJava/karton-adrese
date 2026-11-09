@@ -22,4 +22,4 @@ jobs:
       - name: Provjera skupova i ZET GTFS-a
         run: python scripts/sonda.py
         env:
-          SONDA_SAMO_OSM: "1"
+          SONDA_POPIS: "1"
