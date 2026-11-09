@@ -252,8 +252,15 @@ def sonda_gisco():
             for r in redovi[:8]:
                 print("    " + r[:400])
             # isječak oko Zagreba (N 2450–2550 km, E 4760–4860 km u EPSG:3035)
-            isjecak = [redovi[0]] + [r for r in redovi[1:] if any(
-                f"N{n}" in r and any(f"E{e}" in r for e in range(4760, 4861)) for n in range(2450, 2551))]
+            import re
+            def u_zagrebu(r):
+                m = re.search(r"N(\\d+)E(\\d+)", r)
+                if not m:
+                    return False
+                n, e = int(m.group(1)), int(m.group(2))
+                n, e = (n * 1000, e * 1000) if n < 100000 else (n, e)
+                return 2450000 <= n <= 2550000 and 4760000 <= e <= 4860000
+            isjecak = [redovi[0]] + [r for r in redovi[1:] if u_zagrebu(r)]
             print(f"    redaka u isječku Zagreba: {len(isjecak) - 1}")
             with open(os.path.join(IZLAZ, "gisco-" + os.path.basename(info.filename)), "w", encoding="utf-8") as d:
                 d.write("\n".join(isjecak))
