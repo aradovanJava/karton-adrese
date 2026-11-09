@@ -226,6 +226,39 @@ def sonda_dodatno():
         ispis_odgovora(f"GetCapabilities {put}", f"https://geostat.dzs.hr/{put}?service=WFS&request=GetCapabilities", 1500)
 
 
+def sonda_gisco():
+    """Eurostat GISCO – popis 2021. na mreži 1 km² za Hrvatsku (INSPIRE paket po državi, CSV)."""
+    print("\n=== GISCO popis 2021. – Hrvatska")
+    ispis_odgovora("ATOM", "https://gisco-services.ec.europa.eu/census/2021/INSPIRE/PD.atom", 1500)
+    for ime in ("HR_PD_3035_CSV.zip",):
+        url = "https://gisco-services.ec.europa.eu/census/2021/INSPIRE/Data/" + ime
+        try:
+            podaci, odrezano = dohvati(url, 300 * 1024 * 1024)
+        except Exception as e:  # noqa: BLE001
+            print(f"  {ime}: {e!r}")
+            continue
+        print(f"  {ime}: {len(podaci)} B{' (ODREZANO)' if odrezano else ''}")
+        z = zipfile.ZipFile(io.BytesIO(podaci))
+        for info in z.infolist():
+            print(f"    {info.filename} {info.file_size} B")
+        for info in z.infolist():
+            if not info.filename.lower().endswith(".csv"):
+                if info.filename.lower().endswith((".xml", ".txt", ".json")):
+                    print("    --- " + info.filename + "\n    " + tekst(z.read(info))[:3000].replace("\n", "\n    "))
+                continue
+            t = tekst(z.read(info))
+            redovi = t.splitlines()
+            print(f"    --- {info.filename}: {len(redovi)} redaka")
+            for r in redovi[:8]:
+                print("    " + r[:400])
+            # isječak oko Zagreba (N 2450–2550 km, E 4760–4860 km u EPSG:3035)
+            isjecak = [redovi[0]] + [r for r in redovi[1:] if any(
+                f"N{n}" in r and any(f"E{e}" in r for e in range(4760, 4861)) for n in range(2450, 2551))]
+            print(f"    redaka u isječku Zagreba: {len(isjecak) - 1}")
+            with open(os.path.join(IZLAZ, "gisco-" + os.path.basename(info.filename)), "w", encoding="utf-8") as d:
+                d.write("\n".join(isjecak))
+
+
 def sonda_popis():
     """DZS INSPIRE WFS – popis 2021. na mreži 1 km² (GetCapabilities, opis sloja, primjeri)."""
     import re
@@ -306,8 +339,7 @@ def sonda_sve_resurse(portal, paket):
 def main():
     os.makedirs(IZLAZ, exist_ok=True)
     if os.environ.get("SONDA_POPIS"):
-        sonda_popis()
-        sonda_dodatno()
+        sonda_gisco()
         for paket in ("zborna-mjesta-civilne-zastite-grada-zagreba", "evakuacijske-povrsine"):
             sonda_sve_resurse(ZG, paket)
         PAKETI.clear()
