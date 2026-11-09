@@ -47,10 +47,14 @@ public class KartonServis {
 
     static final DateTimeFormatter DATUM = DateTimeFormatter.ofPattern("d. M. yyyy.", Locale.forLanguageTag("hr"));
     private static final double POLUMJER_PRETRAGE_M = 2500;
-    /** Rjeđi objekti (menze, studentska naselja, gradski vrtovi, Odmorko) traže se u širem krugu. */
+    /**
+     * Rjeđi objekti traže se u širem krugu: menze, studentska naselja, gradski vrtovi, Odmorko, knjižnice te
+     * zborna mjesta civilne zaštite (17 u cijelom gradu, po jedno u četvrti) i evakuacijske površine.
+     */
     private static final double POLUMJER_RIJETKIH_M = 6000;
     private static final List<Kategorija> RIJETKI = List.of(Kategorija.MENZA, Kategorija.STUDENTSKI_DOM,
-            Kategorija.GRADSKI_VRT, Kategorija.ODMORKO, Kategorija.KNJIZNICA);
+            Kategorija.GRADSKI_VRT, Kategorija.ODMORKO, Kategorija.KNJIZNICA, Kategorija.ZBORNO_MJESTO,
+            Kategorija.EVAKUACIJA);
     private static final double POLUMJER_STAJALISTA_M = 600;
     private static final double POLUMJER_STAJALISTA_FAKULTETA_M = 400;
     private static final List<String> ZANIMLJIVI_ATRIBUTI = List.of("smjen", "boravak", "slobod", "upisn",
@@ -401,6 +405,9 @@ public class KartonServis {
         m.put("kampus", "Kampus");
         m.put("zavrsni_sloj", "Podloga");
         m.put("duljina", "Duljina dionice (m)");
+        m.put("gradska_ce", "Gradska četvrt");
+        m.put("tip", "Namjena");
+        m.put("povrsina_ha", "Površina (ha)");
         return m;
     }
 

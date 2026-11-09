@@ -58,4 +58,4 @@ ne služi za upozorenja o onečišćenju i ne zamjenjuje službene podatke mrež
 cd ml
 python -m karton_ml.treniranje --pm10 <datoteke> --preuzmi-meteo --postaja-id djordjiceva --naziv "Đorđićeva ulica" --lat 45.8131 --lon 15.9846
 ```
-Nastalo: 2026-11-07T12:59:21+01:00 · karton-ml 1.0.0 · LightGBM 4.7.0
+Nastalo: 2026-11-09T00:44:40+01:00 · karton-ml 1.0.0 · LightGBM 4.7.0

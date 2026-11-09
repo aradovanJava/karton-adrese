@@ -55,6 +55,7 @@ public class UvozServis {
     private final CkanKlijent ckan;
     private final OverpassUvoz overpass;
     private final PopisWfsUvoz popis;
+    private final PopisMrezaUvoz popisMreza;
     private final Preuzimac preuzimac;
     private final Geokoder geokoder;
     private final IzvorRepozitorij izvori;
@@ -67,13 +68,14 @@ public class UvozServis {
     private final AtomicBoolean uTijeku = new AtomicBoolean(false);
 
     public UvozServis(KartonSvojstva svojstva, CkanKlijent ckan, OverpassUvoz overpass, PopisWfsUvoz popis,
-                      Preuzimac preuzimac, Geokoder geokoder, IzvorRepozitorij izvori, PoiRepozitorij poi,
+                      PopisMrezaUvoz popisMreza, Preuzimac preuzimac, Geokoder geokoder, IzvorRepozitorij izvori, PoiRepozitorij poi,
                       StajalisteRepozitorij stajalista, CelijaRepozitorij celije, GranicaRepozitorij granice,
                       AdresaRepozitorij adrese, Indeks15Servis indeks15) {
         this.svojstva = svojstva;
         this.ckan = ckan;
         this.overpass = overpass;
         this.popis = popis;
+        this.popisMreza = popisMreza;
         this.preuzimac = preuzimac;
         this.geokoder = geokoder;
         this.izvori = izvori;
@@ -114,9 +116,13 @@ public class UvozServis {
         }
         try {
             registrirajIzvore();
+            // "sve", jedan izvor ili više izvora odvojenih zarezom (npr. zg-zborna-mjesta,dzs-popis-2021)
+            java.util.Set<String> trazeni = samoId == null || samoId.isBlank() || samoId.equalsIgnoreCase("sve") ? null
+                    : java.util.Arrays.stream(samoId.split(",")).map(String::trim).filter(x -> !x.isEmpty())
+                    .collect(java.util.stream.Collectors.toSet());
             List<IzvorKonfiguracija> redom = new ArrayList<>(konfigurirani().stream()
                     .filter(IzvorKonfiguracija::jeOmogucen)
-                    .filter(k -> samoId == null || samoId.equalsIgnoreCase("sve") || k.id().equals(samoId))
+                    .filter(k -> trazeni == null || trazeni.contains(k.id()))
                     .toList());
             redom.sort((x, y) -> Integer.compare(redoslijed(x.vrsta()), redoslijed(y.vrsta())));
             if (redom.isEmpty()) {
@@ -156,7 +162,7 @@ public class UvozServis {
             case ULICE -> 1;
             case CKAN, GEOJSON_URL, TABLICA_URL, OVERPASS -> 2;
             case GTFS -> 3;
-            case WFS_POPIS -> 4;
+            case WFS_POPIS, POPIS_MREZA -> 4;
         };
     }
 
@@ -167,7 +173,7 @@ public class UvozServis {
         return switch (k.vrsta()) {
             case CKAN, GEOJSON_URL, TABLICA_URL, OVERPASS -> uvoziObjekte(k);
             case GTFS -> uvoziGtfs(k);
-            case WFS_POPIS -> uvoziPopis(k);
+            case WFS_POPIS, POPIS_MREZA -> uvoziPopis(k);
             case GRANICE -> uvoziGranice(k);
             case ULICE -> uvoziUlice(k);
         };
@@ -263,9 +269,14 @@ public class UvozServis {
     // ------------------------------------------------------------------ stanovništvo (DZS WFS)
 
     private String uvoziPopis(IzvorKonfiguracija k) throws IOException {
-        PopisWfsUvoz.Mreza m = popis.uvezi(k);
+        PopisWfsUvoz.Mreza m = k.vrsta() == VrstaIzvora.POPIS_MREZA ? popisMreza.uvezi(k) : popis.uvezi(k);
+        if (m.stanovnika().isEmpty()) {
+            throw new IOException("Izvor nije dao nijednu ćeliju sa stanovništvom za područje "
+                    + svojstva.podrucje().naziv() + " (" + m.sloj() + ")");
+        }
         int n = celije.zamijeniStanovnistvo(m.sredista(), m.stanovnika());
-        String poruka = "ćelija sa stanovništvom: " + n + " (sloj " + m.sloj() + ")";
+        long ukupno = m.stanovnika().values().stream().mapToLong(Integer::longValue).sum();
+        String poruka = "ćelija sa stanovništvom: " + n + ", ukupno " + ukupno + " stanovnika (" + m.sloj() + ")";
         izvori.zabiljeziUspjeh(k.id(), n == 0 ? "UPOZORENJE" : "OK",
                 new IzvorRepozitorij.Statistika(n, n, 0, 0, 0, LocalDate.of(2021, 8, 31), poruka));
         return poruka;

@@ -1,6 +1,7 @@
 package hr.kartonadrese.core.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -55,6 +56,69 @@ public class Preuzimac {
     /** Preuzimanje velike datoteke izravno na disk (npr. GTFS ZIP). */
     public Path preuzmiUDatoteku(String url, Path odrediste) throws IOException {
         return posalji(HttpRequest.newBuilder(URI.create(url)).GET(), HttpResponse.BodyHandlers.ofFile(odrediste), url);
+    }
+
+    /** Dio datoteke dohvaćen HTTP rasponom: podaci, položaj prvog bajta i ukupna veličina datoteke. */
+    public record Dio(byte[] podaci, long pocetak, long ukupno) {
+    }
+
+    /**
+     * Dohvat raspona bajtova ({@code Range: bytes=…}). Vraća {@code null} ako poslužitelj ne podržava
+     * raspone (odgovori cijelom datotekom), bez čitanja tijela odgovora.
+     *
+     * @param raspon npr. {@code "bytes=-65536"} (zadnjih 64 KB) ili {@code "bytes=100-199"}
+     */
+    public Dio preuzmiRaspon(String url, String raspon) throws IOException {
+        Tok t = otvoriRaspon(url, raspon);
+        if (t == null) {
+            return null;
+        }
+        try (InputStream tok = t.tok()) {
+            return new Dio(tok.readAllBytes(), t.pocetak(), t.ukupno());
+        }
+    }
+
+    /** Tok podataka za raspon bajtova [od, od + duljina), ili {@code null} ako raspon nije podržan. */
+    public InputStream otvoriRaspon(String url, long od, long duljina) throws IOException {
+        Tok t = otvoriRaspon(url, "bytes=" + od + "-" + (od + duljina - 1));
+        return t == null ? null : t.tok();
+    }
+
+    private record Tok(InputStream tok, long pocetak, long ukupno) {
+    }
+
+    private static final java.util.regex.Pattern CONTENT_RANGE =
+            java.util.regex.Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+|\\*)");
+
+    private Tok otvoriRaspon(String url, String raspon) throws IOException {
+        HttpRequest zahtjev = HttpRequest.newBuilder(URI.create(url)).GET()
+                .header("User-Agent", userAgent)
+                .header("Range", raspon)
+                .timeout(vrijemeCekanja)
+                .build();
+        pricekajRed(zahtjev.uri().getHost());
+        HttpResponse<InputStream> odgovor;
+        try {
+            odgovor = klijent.send(zahtjev, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Prekinuto preuzimanje " + url, e);
+        }
+        if (odgovor.statusCode() != 206) {
+            odgovor.body().close();
+            if (odgovor.statusCode() == 200) {
+                return null;
+            }
+            throw new IOException("HTTP " + odgovor.statusCode() + " za " + url + " (" + raspon + ")");
+        }
+        // Content-Range: bytes 500-999/1234
+        java.util.regex.Matcher m = CONTENT_RANGE.matcher(odgovor.headers().firstValue("Content-Range").orElse(""));
+        if (!m.find()) {
+            odgovor.body().close();
+            throw new IOException("Neispravno zaglavlje Content-Range za " + url);
+        }
+        long ukupno = "*".equals(m.group(3)) ? -1 : Long.parseLong(m.group(3));
+        return new Tok(odgovor.body(), Long.parseLong(m.group(1)), ukupno);
     }
 
     /** POST obrasca (application/x-www-form-urlencoded), npr. upit prema Overpass API-ju. */

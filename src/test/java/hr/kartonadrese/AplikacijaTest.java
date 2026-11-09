@@ -1,7 +1,11 @@
 package hr.kartonadrese;
 
+import hr.kartonadrese.config.IzvorKonfiguracija;
+import hr.kartonadrese.config.VrstaIzvora;
 import hr.kartonadrese.core.ml.SezonskaProcjena;
 import hr.kartonadrese.ml.ModelZraka;
+import hr.kartonadrese.uvoz.PopisMrezaUvoz;
+import hr.kartonadrese.uvoz.PopisWfsUvoz;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -180,5 +185,21 @@ class AplikacijaTest {
         for (int i = 0; i < 12; i++) {
             assertEquals(python.get(i).pm10(), java.get(i).pm10(), 0.05, "mjesec " + (i + 1));
         }
+    }
+
+    @Autowired
+    private PopisMrezaUvoz popisMreza;
+
+    @Test
+    void popis2021NaMreziIzPrilozenogIsjecka() throws Exception {
+        IzvorKonfiguracija k = new IzvorKonfiguracija("dzs-popis-2021", "Popis 2021.", "DZS / Eurostat", null,
+                VrstaIzvora.POPIS_MREZA, null, null, null, "classpath:popis/popis-2021-zagreb.csv.gz", null, null,
+                null, null, null, null, null, null, null, null);
+        PopisWfsUvoz.Mreza m = popisMreza.uvezi(k);
+        assertTrue(m.stanovnika().size() > 500, "ćelija: " + m.stanovnika().size());
+        long ukupno = m.stanovnika().values().stream().mapToLong(Integer::longValue).sum();
+        // okvir područja obuhvaća Grad Zagreb (popis 2021.: 767 131) te Zaprešić i Veliku Goricu
+        assertTrue(ukupno > 800_000 && ukupno < 1_000_000, "stanovnika u okviru: " + ukupno);
+        assertEquals(11022, m.stanovnika().get("CRS3035RES1000mN2541000E4787000"));
     }
 }
