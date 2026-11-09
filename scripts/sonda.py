@@ -217,6 +217,15 @@ def ispis_odgovora(naslov, url, najvise=6000):
     return podaci
 
 
+def sonda_dodatno():
+    """Metapodaci DZS-a i mogući srodni servisi (statističke jedinice – mreža)."""
+    for uuid in ("005ef965-6254-4ef3-82ba-ad918021ef88", "7db501e5-45fd-4748-a2e2-2dc32117af34"):
+        ispis_odgovora(f"metapodaci {uuid}", f"https://geostat.gov.hr/geonetwork/srv/hrv/xml.metadata.get?uuid={uuid}", 9000)
+    for put in ("inspire/su-grid/wfs", "inspire/su-grid-2021/wfs", "inspire/su-2021/wfs", "inspire/su/wfs",
+                "inspire/wfs", "geoserver/wfs", "geoserver/ows"):
+        ispis_odgovora(f"GetCapabilities {put}", f"https://geostat.dzs.hr/{put}?service=WFS&request=GetCapabilities", 1500)
+
+
 def sonda_popis():
     """DZS INSPIRE WFS – popis 2021. na mreži 1 km² (GetCapabilities, opis sloja, primjeri)."""
     import re
@@ -229,7 +238,7 @@ def sonda_popis():
     t = tekst(cap)
     with open(os.path.join(IZLAZ, "dzs-capabilities.xml"), "w", encoding="utf-8") as d:
         d.write(t)
-    slojevi = re.findall(r"<(?:wfs:)?FeatureType>.*?<(?:wfs:)?Name>([^<]+)</", t, re.S)
+    slojevi = re.findall(r"<(?:wfs:)?FeatureType\b.*?<(?:wfs:)?Name>([^<]+)</", t, re.S)
     print(f"    SLOJEVI: {slojevi}")
     print(f"    outputFormat: {sorted(set(re.findall(r'<(?:ows:)?Value>([^<]*(?:json|gml|xml)[^<]*)</', t, re.I)))[:30]}")
     print(f"    CRS: {sorted(set(re.findall(r'<(?:wfs:)?(?:Default|Other)CRS>([^<]+)<', t)))}")
@@ -298,6 +307,7 @@ def main():
     os.makedirs(IZLAZ, exist_ok=True)
     if os.environ.get("SONDA_POPIS"):
         sonda_popis()
+        sonda_dodatno()
         for paket in ("zborna-mjesta-civilne-zastite-grada-zagreba", "evakuacijske-povrsine"):
             sonda_sve_resurse(ZG, paket)
         PAKETI.clear()
